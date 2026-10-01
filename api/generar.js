@@ -25,7 +25,9 @@ export default async function handler(req, res) {
 
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    
+    // Configuración del modelo actualizado según requerimiento de la API
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
 
     const prompt = `Eres un entrenador personal experto. Crea una rutina de entrenamiento personalizada.
 Datos del alumno:
@@ -45,7 +47,6 @@ Organiza la rutina por días con ejercicios, series, repeticiones y descanso.`;
 
     return res.status(200).json({ rutina: responseText });
   } catch (error) {
-    console.error("Error en Serverless Function:", error);
     return res.status(500).json({ error: error.message || 'Error al conectar con la API' });
   }
 }
