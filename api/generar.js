@@ -26,8 +26,7 @@ export default async function handler(req, res) {
 
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  ✅ Modelo actual admitido
-const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
 
 
     const prompt = `Eres un entrenador personal experto. Crea una rutina de entrenamiento personalizada.
