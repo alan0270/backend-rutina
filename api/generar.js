@@ -1,5 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+// Función para esperar X milisegundos
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -23,13 +26,10 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Falta configurar la variable GEMINI_API_KEY en Vercel' });
   }
 
-  try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    
-    // Configuración del modelo actualizado según requerimiento de la API
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
 
-    const prompt = `Eres un entrenador personal experto. Crea una rutina de entrenamiento personalizada.
+  const prompt = `Eres un entrenador personal experto. Crea una rutina de entrenamiento personalizada.
 Datos del alumno:
 - Nombre: ${nombre || 'Usuario'}
 - Edad: ${edad || 'No especificado'}
@@ -42,11 +42,29 @@ Datos del alumno:
 
 Organiza la rutina por días con ejercicios, series, repeticiones y descanso.`;
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
+  // Intentar hasta 3 veces si hay congestión (error 503)
+  const maxRetries = 3;
+  let attempt = 0;
 
-    return res.status(200).json({ rutina: responseText });
-  } catch (error) {
-    return res.status(500).json({ error: error.message || 'Error al conectar con la API' });
+  while (attempt < maxRetries) {
+    try {
+      attempt++;
+      const result = await model.generateContent(prompt);
+      const responseText = result.response.text();
+
+      return res.status(200).json({ rutina: responseText });
+    } catch (error) {
+      console.error(`Intento ${attempt} falló:`, error.message);
+
+      // Si es el último intento o el error no es de alta demanda/servidor, lanzamos el error
+      if (attempt >= maxRetries) {
+        return res.status(500).json({ 
+          error: 'El servicio de IA está experimentando alta demanda en este momento. Por favor, intenta de nuevo en unos segundos.' 
+        });
+      }
+
+      // Esperar 1.5 segundos antes de reintentar
+      await wait(1500);
+    }
   }
 }
