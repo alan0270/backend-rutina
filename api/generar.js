@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export default async function handler(req, res) {
   // Configuración de cabeceras CORS
@@ -25,7 +25,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `Eres un entrenador personal experto. Crea una rutina de entrenamiento personalizada.
 Datos del alumno:
@@ -40,12 +41,10 @@ Datos del alumno:
 
 Organiza la rutina por días con ejercicios, series, repeticiones y descanso.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
 
-    return res.status(200).json({ rutina: response.text });
+    return res.status(200).json({ rutina: responseText });
   } catch (error) {
     return res.status(500).json({ error: error.message || 'Error interno del servidor' });
   }
