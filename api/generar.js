@@ -1,67 +1,52 @@
+import { GoogleGenAI } from '@google/genai';
+
 export default async function handler(req, res) {
+  // Configuración de cabeceras CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
 
-  const { nombre, edad, estatura, genero, objetivo, dias, nivel, notasAdicionales } = req.body;
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método no permitido' });
+  }
 
-  const prompt = `Eres un entrenador personal certificado. Diseña una rutina 100% personalizada en formato JSON.
-Datos del alumno:
-- Nombre: ${nombre}
-- Edad: ${edad} años
-- Estatura: ${estatura} cm
-- Género: ${genero}
-- Objetivo: ${objetivo}
-- Días a entrenar: ${dias} días por semana
-- Nivel: ${nivel}
-- Notas especiales/lesiones/equipo: ${notasAdicionales || 'Ninguna'}
+  const { nombre, edad, estatura, genero, objetivo, dias, nivel, notas } = req.body;
 
-Devuelve ÚNICAMENTE un objeto JSON con la siguiente estructura exacta, sin texto antes ni después, ni bloques markdown:
-{
-  "name": "Rutina Personalizada de ${nombre}",
-  "days": [
-    {
-      "t": "Día 1: Nombre de la zona",
-      "ex": [
-        {
-          "n": "Nombre del ejercicio",
-          "s": 4,
-          "r": "10-12",
-          "d": 0,
-          "kg": ""
-        }
-      ]
-    }
-  ]
-}`;
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: 'Falta configurar la variable GEMINI_API_KEY en Vercel' });
+  }
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7
-      })
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+    const prompt = `Eres un entrenador personal experto. Crea una rutina de entrenamiento personalizada.
+Datos del alumno:
+- Nombre: ${nombre || 'Usuario'}
+- Edad: ${edad || 'No especificado'} años
+- Estatura: ${estatura || 'No especificado'} cm
+- Género: ${genero || 'No especificado'}
+- Objetivo: ${objetivo || 'Acondicionamiento físico'}
+- Días por semana: ${dias || 3}
+- Nivel: ${nivel || 'Principiante'}
+- Notas especiales / lesiones / equipo: ${notas || 'Ninguna'}
+
+Organiza la rutina por días con ejercicios, series, repeticiones y descanso.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
     });
 
-    const data = await response.json();
-    if (data.error) return res.status(500).json({ error: data.error.message });
-
-    const content = data.choices[0].message.content.trim();
-    const cleanJson = content.replace(/^```json/, '').replace(/```$/, '').trim();
-    const rutina = JSON.parse(cleanJson);
-
-    return res.status(200).json(rutina);
+    return res.status(200).json({ rutina: response.text });
   } catch (error) {
-    return res.status(500).json({ error: 'Error al generar rutina: ' + error.message });
+    return res.status(500).json({ error: error.message || 'Error interno del servidor' });
   }
 }
