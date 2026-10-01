@@ -9,50 +9,95 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
-  const { nombre, edad, estatura, genero, objetivo, dias, nivel, notas } = req.body || {};
-  const numDias = parseInt(dias) || 5;
+  const { nombre, edad, estatura, genero, objetivo, dias, nivel, lesiones, equipo, duracion } = req.body || {};
+  const numDias = parseInt(dias) || 4;
 
   if (!process.env.GEMINI_API_KEY) {
-    return res.status(500).json({ error: 'Falta GEMINI_API_KEY' });
+    return res.status(500).json({ error: 'Falta configurar GEMINI_API_KEY en Vercel' });
   }
 
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const models = ['gemini-2.0-flash', 'gemini-1.5-flash'];
 
-  const prompt = `Crea una rutina de gimnasio personalizada de EXACTAMENTE ${numDias} DÍAS para ${nombre || 'Usuario'}.
-- Objetivo: ${objetivo || 'Ganar músculo'}
+  const prompt = `Actúa como un entrenador personal certificado de alto nivel.
+Crea una rutina estructurada de ${numDias} días para el usuario:
+- Nombre: ${nombre || 'Atleta'}
+- Género: ${genero || 'No especificado'} ${genero === 'Mujer' ? '(Enfocar mayor volumen relativo en tren inferior/glúteos/piernas)' : ''}
+- Objetivo: ${objetivo || 'Acondicionamiento'}
 - Nivel: ${nivel || 'Intermedio'}
-- Días a entrenar: ${numDias} días
-- Notas/Equipo: ${notas || 'Gimnasio completo'}
+- Duración por sesión: ${duracion || 60} minutos
+- Equipo disponible: ${equipo || 'Gimnasio completo'}
+- Lesiones / Limitaciones: ${lesiones || 'Ninguna'} (IMPORTANTE: Evitar completamente ejercicios que estresen esta zona)
 
-Responde en formato Markdown limpio con títulos por día (Ej: ### Día 1: Pecho y Tríceps) y lista de ejercicios con Series, Repeticiones y Descanso.`;
+Devuelve ÚNICAMENTE un objeto JSON válido con la siguiente estructura estricta (sin bloques de código markdown extra):
+{
+  "calentamiento": ["Movilidad articular 5 min", "Cardio suave 5 min"],
+  "dias": [
+    {
+      "nombre": "Día 1: Torso / Fuerza",
+      "ejercicios": [
+        {
+          "id": "ex_1",
+          "nombre": "Press de Banca con Barra",
+          "musculo": "Pecho / Tríceps",
+          "series": 4,
+          "reps": "8-10",
+          "descansoSeg": 90,
+          "pasos": "Acuéstate en el banco, baja la barra al esternón controladamente y empuja con fuerza.",
+          "errores": "Rebotar la barra en el pecho o despegar la cadera.",
+          "img": "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=500&auto=format&fit=crop&q=60"
+        }
+      ]
+    }
+  ],
+  "estiramiento": ["Estiramiento de pectorales 30s", "Estiramiento de dorsales 30s"]
+}`;
 
   for (const modelName of models) {
     try {
-      const model = genAI.getGenerativeModel({ model: modelName });
+      const model = genAI.getGenerativeModel({ 
+        model: modelName,
+        generationConfig: { responseMimeType: "application/json" }
+      });
       const result = await model.generateContent(prompt);
-      const responseText = result.response.text();
-      if (responseText) return res.status(200).json({ rutina: responseText });
+      const text = result.response.text();
+      const parsed = JSON.parse(text);
+      if (parsed) return res.status(200).json(parsed);
     } catch (e) {
-      console.error(`Error con modelo ${modelName}:`, e.message);
+      console.error(`Error con ${modelName}:`, e.message);
     }
   }
 
-  // Fallback Inteligente: Genera exactamente la cantidad de días elegida si la IA está saturada
-  let rutinaFallback = `### Plan Personalizado (${numDias} Días)\n*Servidor en alta demanda. Te hemos generado una rutina optimizada automáticamente:*\n\n`;
-  
-  const plantillasDias = [
-    "### Día 1: Pecho y Tríceps\n- Press Banca Plano: 4 series x 10 reps (Descanso 90s)\n- Press Inclinado con Mancuernas: 3 series x 12 reps (Descanso 75s)\n- Fondos en Paralelas / Máquina: 3 series x 10 reps\n- Extensión de Tríceps en Polea: 4 series x 12 reps\n",
-    "### Día 2: Espalda y BÍceps\n- Jalón al Pecho: 4 series x 10 reps (Descanso 90s)\n- Remo con Barra o Mancuerna: 4 series x 10 reps\n- Pullover en Polea Alta: 3 series x 12 reps\n- Curl de BÍceps con Barra Z: 4 series x 12 reps\n",
-    "### Día 3: Cuádriceps y Abdominales\n- Sentadilla Libre o en Máquina: 4 series x 10 reps (Descanso 120s)\n- Prensa de Piernas: 4 series x 12 reps\n- Extensión de Cuádriceps: 3 series x 15 reps\n- Plancha Abdominal: 4 series x 45 seg\n",
-    "### Día 4: Hombros y Trapecio\n- Press Militar con Mancuernas: 4 series x 10 reps\n- Elevaciones Laterales: 4 series x 15 reps\n- Pájaros (Hombro Posterior): 3 series x 12 reps\n- Encogimientos con Mancuernas: 3 series x 15 reps\n",
-    "### Día 5: Isquios, Glúteos y Gemelos\n- Peso Muerto Rumano: 4 series x 10 reps\n- Hip Thrust con Barra: 4 series x 12 reps\n- Curl Femoral Tumbado: 3 series x 12 reps\n- Elevación de Talones: 4 series x 15 reps\n",
-    "### Día 6: Full Body / Torso Enfoque\n- Dominadas o Jalón Abierto: 4 series x 8 reps\n- Press de Banca Inclinado: 4 series x 10 reps\n- Zancadas con Mancuernas: 3 series x 12 por pierna\n- Elevação Lateral + Core: 3 series al fallo\n"
-  ];
-
-  for (let i = 0; i < numDias; i++) {
-    rutinaFallback += plantillasDias[i] + "\n";
-  }
-
-  return res.status(200).json({ rutina: rutinaFallback });
+  // Fallback estructurado en caso de límite de cuota
+  return res.status(200).json({
+    calentamiento: ["5 min Cardio suave", "Movilidad articular general"],
+    dias: Array.from({ length: numDias }, (_, i) => ({
+      nombre: `Día ${i + 1}: Sesión Personalizada`,
+      ejercicios: [
+        {
+          id: `fallback_${i}_1`,
+          nombre: genero === 'Mujer' ? "Sentadilla Búlgara" : "Press de Banca con Mancuernas",
+          musculo: genero === 'Mujer' ? "Glúteos y Cuádriceps" : "Pecho",
+          series: 4,
+          reps: "10-12",
+          descansoSeg: 60,
+          pasos: "Mantén el torso estable y controla la fase descendente.",
+          errores: "Perder la postura o acelerar demasiado.",
+          img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=500&auto=format&fit=crop&q=60"
+        },
+        {
+          id: `fallback_${i}_2`,
+          nombre: "Remo con Mancuerna",
+          musculo: "Espalda",
+          series: 4,
+          reps: "10-12",
+          descansoSeg: 60,
+          pasos: "Tracciona llevando el codo hacia la cadera manteniendo la espalda recta.",
+          errores: "Rotar en exceso el torso.",
+          img: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=500&auto=format&fit=crop&q=60"
+        }
+      ]
+    })),
+    estiramiento: ["Estiramiento general de piernas", "Movilidad de hombros y espalda"]
+  });
 }
