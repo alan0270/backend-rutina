@@ -1,6 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Función para esperar X milisegundos
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default async function handler(req, res) {
@@ -27,7 +26,9 @@ export default async function handler(req, res) {
   }
 
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
+  
+  // Lista de modelos a intentar en orden de preferencia
+  const modelsToTry = ['gemini-3.8-flash', 'gemini-2.0-flash'];
 
   const prompt = `Eres un entrenador personal experto. Crea una rutina de entrenamiento personalizada.
 Datos del alumno:
@@ -42,29 +43,39 @@ Datos del alumno:
 
 Organiza la rutina por días con ejercicios, series, repeticiones y descanso.`;
 
-  // Intentar hasta 3 veces si hay congestión (error 503)
-  const maxRetries = 3;
-  let attempt = 0;
+  for (const modelName of modelsToTry) {
+    const model = genAI.getGenerativeModel({ model: modelName });
+    let attempt = 0;
+    const maxRetries = 2;
 
-  while (attempt < maxRetries) {
-    try {
-      attempt++;
-      const result = await model.generateContent(prompt);
-      const responseText = result.response.text();
-
-      return res.status(200).json({ rutina: responseText });
-    } catch (error) {
-      console.error(`Intento ${attempt} falló:`, error.message);
-
-      // Si es el último intento o el error no es de alta demanda/servidor, lanzamos el error
-      if (attempt >= maxRetries) {
-        return res.status(500).json({ 
-          error: 'El servicio de IA está experimentando alta demanda en este momento. Por favor, intenta de nuevo en unos segundos.' 
-        });
+    while (attempt < maxRetries) {
+      try {
+        attempt++;
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+        return res.status(200).json({ rutina: responseText });
+      } catch (error) {
+        console.error(`Error con ${modelName} (Intento ${attempt}):`, error.message);
+        if (attempt < maxRetries) {
+          await wait(1000);
+        }
       }
-
-      // Esperar 1.5 segundos antes de reintentar
-      await wait(1500);
     }
   }
+
+  // Si todos los modelos de IA están en su límite, devuelve una respuesta útil
+  return res.status(200).json({
+    rutina: `### Rutina Base de Resguardo (IA Saturada)
+El servidor de la IA está experimentando alta demanda en este momento. Aquí tienes una estructura inicial mientras se restablece el servicio:
+
+**Día 1: Torso / Fuerza**
+- Press de banca o flexiones: 4 series x 10-12 reps (Descanso: 90s)
+- Remo con mancuerna o barra: 4 series x 10-12 reps (Descanso: 90s)
+- Press militar: 3 series x 12 reps (Descanso: 60s)
+
+**Día 2: Pierna / Core**
+- Sentadillas: 4 series x 10-12 reps (Descanso: 90s)
+- Peso muerto rumano: 3 series x 12 reps (Descanso: 90s)
+- Plancha abdominal: 3 series x 45 segundos`
+  });
 }
