@@ -1,7 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export default async function handler(req, res) {
-  // Configuración de cabeceras CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -18,7 +17,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método no permitido' });
   }
 
-  const { nombre, edad, estatura, genero, objetivo, dias, nivel, notas } = req.body;
+  const { nombre, edad, estatura, genero, objetivo, dias, nivel, notas } = req.body || {};
 
   if (!process.env.GEMINI_API_KEY) {
     return res.status(500).json({ error: 'Falta configurar la variable GEMINI_API_KEY en Vercel' });
@@ -26,13 +25,12 @@ export default async function handler(req, res) {
 
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
-
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `Eres un entrenador personal experto. Crea una rutina de entrenamiento personalizada.
 Datos del alumno:
 - Nombre: ${nombre || 'Usuario'}
-- Edad: ${edad || 'No especificado'} años
+- Edad: ${edad || 'No especificado'}
 - Estatura: ${estatura || 'No especificado'} cm
 - Género: ${genero || 'No especificado'}
 - Objetivo: ${objetivo || 'Acondicionamiento físico'}
@@ -47,6 +45,7 @@ Organiza la rutina por días con ejercicios, series, repeticiones y descanso.`;
 
     return res.status(200).json({ rutina: responseText });
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+    console.error("Error en Serverless Function:", error);
+    return res.status(500).json({ error: error.message || 'Error al conectar con la API' });
   }
 }
