@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>FitAI Pro - IA & Social Fitness</title>
+  <title>FitAI Pro - IA, Crear & Timer Aeróbico</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -30,42 +30,27 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // MOTOR DE INTELIGENCIA ARTIFICIAL LOCAL (Genera rutinas según parámetros del usuario)
+    // MOTOR IA DE RESPALDO
     const motorIA_GenerarRutina = (datos) => {
-      const { objetivo, dias, lesiones, nivel, equipo, duracion } = datos;
+      const { objetivo, dias, lesiones, nivel, duracion } = datos;
       const numDias = parseInt(dias) || 3;
 
       const baseEjercicios = {
         pecho: ["Press de Banca Plano", "Press Inclinado con Mancuernas", "Aperturas en Polea"],
-        espalda: ["Jalón al Pecho Agarre Abierto", "Remo Horizontal con Barra", "Remo Unilateral con Mancuerna"],
+        espalda: ["Jalón al Pecho", "Remo Horizontal con Barra", "Remo Unilateral"],
         piernas: lesiones.includes("Espalda baja") 
-          ? ["Prensa de Piernas Inclinada", "Hip Thrust con Barra", "Extensión de Cuádriceps", "Curl Femoral Tumbado"]
-          : ["Sentadilla Profunda con Barra", "Peso Muerto Rumano", "Hip Thrust", "Zancadas Búlgaras"],
-        hombros: ["Press Militar con Mancuernas", "Elevaciones Laterales", "Pájaro para Deltoides Posterior"],
-        brazos: ["Curl de Bíceps con Barra", "Extensión de Tríceps Polea Alta", "Curl Martillo"]
+          ? ["Prensa de Piernas Inclinada", "Hip Thrust", "Extensión de Cuádriceps", "Curl Femoral"]
+          : ["Sentadilla con Barra", "Peso Muerto Rumano", "Hip Thrust", "Zancadas Búlgaras"],
+        hombros: ["Press Militar", "Elevaciones Laterales", "Pájaro"],
+        brazos: ["Curl de Bíceps", "Extensión de Tríceps Polea", "Curl Martillo"]
       };
 
       const plantillasPorDias = [
-        {
-          nombre: "Día 1: Torso (Pecho + Espalda + Hombro)",
-          grupos: ['pecho', 'espalda', 'hombros']
-        },
-        {
-          nombre: "Día 2: Pierna Completa & Glúteo",
-          grupos: ['piernas']
-        },
-        {
-          nombre: "Día 3: Fullbody & Brazos",
-          grupos: ['pecho', 'espalda', 'brazos']
-        },
-        {
-          nombre: "Día 4: Hombro & Brazo Focus",
-          grupos: ['hombros', 'brazos']
-        },
-        {
-          nombre: "Día 5: Pierna Enfoque Cadena Posterior",
-          grupos: ['piernas']
-        }
+        { nombre: "Día 1: Torso", grupos: ['pecho', 'espalda', 'hombros'] },
+        { nombre: "Día 2: Pierna Completa", grupos: ['piernas'] },
+        { nombre: "Día 3: Fullbody & Arms", grupos: ['pecho', 'espalda', 'brazos'] },
+        { nombre: "Día 4: Hombro y Brazo", grupos: ['hombros', 'brazos'] },
+        { nombre: "Día 5: Pierna Enfoque Posterior", grupos: ['piernas'] }
       ];
 
       const diasGenerados = plantillasPorDias.slice(0, numDias).map(p => {
@@ -76,7 +61,7 @@
               nombre: nombreEj,
               series: nivel === 'Avanzado' ? 4 : 3,
               repsBase: objetivo === 'Fuerza' ? '6-8' : '10-12',
-              descansoSeg: objetivo === 'Fuerza' ? 120 : 60
+              descansoSeg: 60
             });
           });
         });
@@ -94,65 +79,30 @@
       };
     };
 
-    // DATOS DE PRUEBA DE INFLUENCERS Y COMUNIDAD
     const INFLUENCERS_MOCK = [
-      {
-        id: 'inf-1',
-        nombre: 'Carlos "Titan" Ruiz',
-        handle: '@carlostitan',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        seguidores: '124K',
-        siguiendo: false
-      },
-      {
-        id: 'inf-2',
-        nombre: 'Sofía Fitness Pro',
-        handle: '@sofi_fit',
-        avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-        seguidores: '89K',
-        siguiendo: true
-      }
+      { id: 'inf-1', nombre: 'Carlos "Titan" Ruiz', seguidores: '124K', siguiendo: false, avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' },
+      { id: 'inf-2', nombre: 'Sofía Fitness Pro', seguidores: '89K', siguiendo: true, avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80' }
     ];
 
     const POSTS_MOCK = [
-      {
-        id: 'p-1',
-        autor: 'Carlos "Titan" Ruiz',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        tiempo: 'Hace 2h',
-        texto: '¡Les dejo un tip clave para la Sentadilla! Mantengan la mirada neutral para cuidar las cervicales.',
-        exclusivo: false,
-        likes: 342
-      },
-      {
-        id: 'p-2',
-        autor: 'Sofía Fitness Pro',
-        avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-        tiempo: 'Hace 5h',
-        texto: '🔒 [RUTINA EXCLUSIVA VIP] Plan especial de hipertrofia de glúteos y femorales cargado para suscriptores.',
-        exclusivo: true,
-        likes: 890
-      }
+      { id: 'p-1', autor: 'Carlos "Titan" Ruiz', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80', tiempo: 'Hace 2h', texto: '¡Mantén la mirada neutral al hacer Sentadillas para no recargar el cuello!' }
     ];
 
     function App() {
-      const [tab, setTab] = useState('generar');
-      const [darkMode, setDarkMode] = useState(false);
+      const [tab, setTab] = useState('timer');
+      const [darkMode, setDarkMode] = useState(true);
 
-      // ESTADO DEL FORMULARIO DE IA
+      useEffect(() => {
+        if (darkMode) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+      }, [darkMode]);
+
+      // ESTADO DE FORMULARIO IA
       const [formData, setFormData] = useState({
-        nombre: 'Alan',
-        genero: 'Hombre',
-        edad: '24',
-        estatura: '170',
-        objetivo: 'Ganar músculo',
-        dias: '3 días',
-        equipo: 'Gimnasio completo',
-        duracion: '60 min',
-        lesiones: 'Espalda baja (Evitar cargas axiales)',
-        nivel: 'Intermedio'
+        nombre: 'Alan', genero: 'Hombre', edad: '24', estatura: '170',
+        objetivo: 'Ganar músculo', dias: '3 días', equipo: 'Gimnasio completo',
+        duracion: '60 min', lesiones: 'Espalda baja (Evitar cargas axiales)', nivel: 'Intermedio'
       });
-
       const [loading, setLoading] = useState(false);
       const [rutinaActual, setRutinaActual] = useState(() => {
         try {
@@ -161,36 +111,168 @@
         } catch(e) { return null; }
       });
 
-      const [influencers, setInfluencers] = useState(INFLUENCERS_MOCK);
+      // ESTADO DEL CREADOR MANUAL DE RUTINAS
+      const [rutinaNueva, setRutinaNueva] = useState({
+        titulo: 'Mi Rutina Personalizada',
+        dias: [
+          {
+            nombre: 'Día 1: Mi Entrenamiento',
+            ejercicios: [
+              { nombre: 'Press de Banca', series: 4, repsBase: '10' }
+            ]
+          }
+        ]
+      });
+
+      const [nuevoEjNombre, setNuevoEjNombre] = useState('');
+      const [nuevoEjSeries, setNuevoEjSeries] = useState(3);
+      const [nuevoEjReps, setNuevoEjReps] = useState('10-12');
+      const [diaSel, setDiaSel] = useState(0);
+
+      // ESTADO DEL TIMER AERÓBICO
+      const [timerConfig, setTimerConfig] = useState({ prep: 5, trabajo: 45, descanso: 10, rondas: 15 });
+      const [timerEstado, setTimerEstado] = useState({ corriendo: false, fase: 'PREPÁRATE', rondaActual: 1, segsFase: 5 });
+      
+      const timerTargetRef = useRef(null);
 
       useEffect(() => {
         if (rutinaActual) localStorage.setItem('fitai_rutina', JSON.stringify(rutinaActual));
       }, [rutinaActual]);
 
-      // GENERACIÓN DE RUTINA POR IA
-      const handleGenerarRutina = (e) => {
-        e.preventDefault();
-        setLoading(true);
-
-        setTimeout(() => {
-          const nuevaRutina = motorIA_GenerarRutina(formData);
-          setRutinaActual(nuevaRutina);
-          setLoading(false);
-          setTab('entrenar');
-        }, 900);
+      // VOS SINTETIZADA
+      const hablar = (texto) => {
+        if ('speechSynthesis' in window) {
+          try {
+            window.speechSynthesis.cancel();
+            const ut = new SpeechSynthesisUtterance(texto);
+            ut.lang = 'es-ES';
+            window.speechSynthesis.speak(ut);
+          } catch(e){}
+        }
       };
 
-      const toggleFollow = (id) => {
-        setInfluencers(prev => prev.map(inf => inf.id === id ? { ...inf, siguiendo: !inf.siguiendo } : inf));
+      // CONTROL DEL TIMER
+      useEffect(() => {
+        let interval = null;
+        if (timerEstado.corriendo) {
+          interval = setInterval(() => {
+            const ahora = Date.now();
+            const rest = Math.max(0, Math.ceil((timerTargetRef.current - ahora) / 1000));
+            
+            setTimerEstado(prev => ({ ...prev, segsFase: rest }));
+
+            if (rest <= 0) {
+              if (timerEstado.fase === 'PREPÁRATE') {
+                hablar("¡A trabajar!");
+                timerTargetRef.current = Date.now() + timerConfig.trabajo * 1000;
+                setTimerEstado(prev => ({ ...prev, fase: 'TRABAJO', segsFase: timerConfig.trabajo }));
+              } else if (timerEstado.fase === 'TRABAJO') {
+                hablar("Descanso");
+                timerTargetRef.current = Date.now() + timerConfig.descanso * 1000;
+                setTimerEstado(prev => ({ ...prev, fase: 'DESCANSO', segsFase: timerConfig.descanso }));
+              } else if (timerEstado.fase === 'DESCANSO') {
+                if (timerEstado.rondaActual < timerConfig.rondas) {
+                  hablar(`Ronda ${timerEstado.rondaActual + 1}. ¡A trabajar!`);
+                  timerTargetRef.current = Date.now() + timerConfig.trabajo * 1000;
+                  setTimerEstado(prev => ({
+                    ...prev,
+                    fase: 'TRABAJO',
+                    rondaActual: prev.rondaActual + 1,
+                    segsFase: timerConfig.trabajo
+                  }));
+                } else {
+                  hablar("Entrenamiento completado");
+                  setTimerEstado(prev => ({ ...prev, corriendo: false, fase: 'COMPLETADO', segsFase: 0 }));
+                  clearInterval(interval);
+                }
+              }
+            }
+          }, 200);
+        }
+        return () => clearInterval(interval);
+      }, [timerEstado.corriendo, timerEstado.fase, timerEstado.rondaActual, timerConfig]);
+
+      const iniciarTimer = () => {
+        hablar(`Prepárate. ${timerConfig.prep} segundos`);
+        timerTargetRef.current = Date.now() + timerConfig.prep * 1000;
+        setTimerEstado({
+          corriendo: true,
+          fase: 'PREPÁRATE',
+          rondaActual: 1,
+          segsFase: timerConfig.prep
+        });
+      };
+
+      const reiniciarTimer = () => {
+        setTimerEstado({ corriendo: false, fase: 'PREPÁRATE', rondaActual: 1, segsFase: timerConfig.prep });
+      };
+
+      const aplicarPreset = (prep, trabajo, descanso, rondas) => {
+        setTimerConfig({ prep, trabajo, descanso, rondas });
+        setTimerEstado({ corriendo: false, fase: 'PREPÁRATE', rondaActual: 1, segsFase: prep });
+      };
+
+      const formatearMMSS = (segs) => {
+        const m = Math.floor(segs / 60).toString().padStart(2, '0');
+        const s = (segs % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+      };
+
+      const calcularTiempoTotalFaltante = () => {
+        const rondasRestantes = timerConfig.rondas - timerEstado.rondaActual;
+        const porRonda = timerConfig.trabajo + timerConfig.descanso;
+        let total = rondasRestantes * porRonda;
+        if (timerEstado.fase === 'TRABAJO') total += timerEstado.segsFase + timerConfig.descanso;
+        else if (timerEstado.fase === 'DESCANSO') total += timerEstado.segsFase;
+        else if (timerEstado.fase === 'PREPÁRATE') total += timerEstado.segsFase + (timerConfig.rondas * porRonda);
+        return formatearMMSS(total);
+      };
+
+      // MANEJO CREADOR MANUAL
+      const agregarDiaManual = () => {
+        const nuevoNum = rutinaNueva.dias.length + 1;
+        setRutinaNueva(prev => ({
+          ...prev,
+          dias: [...prev.dias, { nombre: `Día ${nuevoNum}: Nuevo Entrenamiento`, ejercicios: [] }]
+        }));
+      };
+
+      const agregarEjercicioManual = () => {
+        if (!nuevoEjNombre.trim()) return;
+        const copiaDias = [...rutinaNueva.dias];
+        copiaDias[diaSel].ejercicios.push({
+          nombre: nuevoEjNombre,
+          series: parseInt(nuevoEjSeries) || 3,
+          repsBase: nuevoEjReps || '10'
+        });
+        setRutinaNueva({ ...rutinaNueva, dias: copiaDias });
+        setNuevoEjNombre('');
+      };
+
+      const eliminarEjercicioManual = (indexEj) => {
+        const copiaDias = [...rutinaNueva.dias];
+        copiaDias[diaSel].ejercicios.splice(indexEj, 1);
+        setRutinaNueva({ ...rutinaNueva, dias: copiaDias });
+      };
+
+      const guardarRutinaManual = () => {
+        const rutinaFormateada = {
+          usuario: 'Personalizada',
+          objetivo: 'Personal',
+          nivel: 'Custom',
+          dias: rutinaNueva.dias
+        };
+        setRutinaActual(rutinaFormateada);
+        setTab('entrenar');
       };
 
       return (
         <div className="max-w-md mx-auto p-4 space-y-4">
           
-          {/* HEADER */}
+          {/* HEADER DE LA APP */}
           <header className="bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-sm flex justify-between items-center border border-gray-100 dark:border-gray-800">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-blue-400 text-white font-bold rounded-2xl flex items-center justify-center text-lg shadow-md shadow-blue-500/20">
+              <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-500 text-white font-bold rounded-2xl flex items-center justify-center text-lg shadow-md shadow-blue-500/20">
                 F
               </div>
               <h1 className="text-lg font-black text-gray-900 dark:text-white tracking-tight">
@@ -205,249 +287,351 @@
             </button>
           </header>
 
-          {/* TABS NAVEGACIÓN */}
-          <nav className="bg-gray-200/70 dark:bg-gray-800/80 p-1.5 rounded-2xl grid grid-cols-5 gap-1 text-[11px] font-bold">
+          {/* MENÚ DE SECCIONES */}
+          <nav className="bg-gray-200/70 dark:bg-gray-900/80 p-1.5 rounded-2xl grid grid-cols-5 gap-1 text-[11px] font-bold">
             {['generar', 'entrenar', 'social', 'crear', 'timer'].map(t => (
               <button 
                 key={t}
                 onClick={() => setTab(t)}
-                className={`py-2 rounded-xl capitalize transition-all text-center ${tab === t ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500'}`}
+                className={`py-2 rounded-xl capitalize transition-all text-center ${tab === t ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500'}`}
               >
-                {t}
+                {t === 'generar' ? 'Mi rutina' : t}
               </button>
             ))}
           </nav>
 
-          {/* CONTENIDO PRINCIPAL */}
-          <main className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-800 space-y-5">
-            
-            {/* 1. TAB GENERAR CON IA */}
-            {tab === 'generar' && (
-              <form onSubmit={handleGenerarRutina} className="space-y-4">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Diseña tu Rutina con IA</h2>
-                  <p className="text-xs text-gray-400 font-medium leading-relaxed mt-1">La IA analizará tus datos para crear una rutina óptima.</p>
+          {/* 1. PESTAÑA TIMER AERÓBICO (ESTILO EXACTO A LA IMAGEN) */}
+          {tab === 'timer' && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-2xl font-black text-indigo-600 dark:text-indigo-400">Timer aeróbico</h2>
+                <p className="text-xs text-gray-400 mt-1">Intervalos de trabajo y descanso con aviso sonoro y de voz.</p>
+              </div>
+
+              {/* CARD PRINCIPAL DEL TEMPORIZADOR */}
+              <div className="bg-gray-100 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 text-center space-y-2 shadow-xl">
+                <span className="text-xs font-black tracking-widest uppercase text-gray-400 dark:text-gray-300">
+                  {timerEstado.fase}
+                </span>
+                <div className="text-6xl font-black tracking-tight text-gray-900 dark:text-white font-mono my-2">
+                  {formatearMMSS(timerEstado.segsFase)}
+                </div>
+                <p className="text-xs text-gray-400 font-medium">
+                  Faltan {calcularTiempoTotalFaltante()}
+                </p>
+                <div className="w-full bg-gray-300 dark:bg-gray-800 h-1.5 rounded-full overflow-hidden mt-3">
+                  <div 
+                    className="bg-indigo-600 h-full transition-all duration-300"
+                    style={{
+                      width: `${
+                        timerEstado.fase === 'TRABAJO' 
+                          ? ((timerConfig.trabajo - timerEstado.segsFase) / timerConfig.trabajo) * 100 
+                          : timerEstado.fase === 'DESCANSO' 
+                          ? ((timerConfig.descanso - timerEstado.segsFase) / timerConfig.descanso) * 100 
+                          : 100
+                      }%`
+                    }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* BOTONES INICIAR Y REINICIAR */}
+              <div className="grid grid-cols-3 gap-3">
+                <button 
+                  onClick={iniciarTimer}
+                  className="col-span-2 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-xs shadow-lg shadow-indigo-600/30 transition-all active:scale-[0.98]"
+                >
+                  {timerEstado.corriendo ? "Pausar / Reiniciar" : "Iniciar"}
+                </button>
+                <button 
+                  onClick={reiniciarTimer}
+                  className="py-3.5 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-white font-bold rounded-2xl text-xs hover:bg-gray-300 dark:hover:bg-gray-700 transition-all active:scale-[0.98]"
+                >
+                  Reiniciar
+                </button>
+              </div>
+
+              {/* PANEL DE CONFIGURACIÓN Y PRESETS */}
+              <div className="bg-gray-100 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/80 rounded-3xl p-5 space-y-4">
+                <span className="text-xs font-extrabold text-gray-500 uppercase tracking-wider block">Modelos</span>
+                
+                {/* PRESETS RÁPIDOS */}
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => aplicarPreset(5, 45, 10, 15)} className="px-3.5 py-2 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-indigo-600 hover:text-white text-xs font-bold transition-all">
+                    45/10/15
+                  </button>
+                  <button onClick={() => aplicarPreset(5, 20, 10, 8)} className="px-3.5 py-2 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-indigo-600 hover:text-white text-xs font-bold transition-all">
+                    Tabata
+                  </button>
+                  <button onClick={() => aplicarPreset(5, 30, 30, 10)} className="px-3.5 py-2 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-indigo-600 hover:text-white text-xs font-bold transition-all">
+                    HIIT 30/30
+                  </button>
+                  <button onClick={() => aplicarPreset(5, 60, 30, 20)} className="px-3.5 py-2 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-indigo-600 hover:text-white text-xs font-bold transition-all">
+                    Cardio 20 min
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                {/* ENTRADAS NUMÉRICAS */}
+                <div className="grid grid-cols-2 gap-3 pt-2">
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Nombre</label>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Trabajo (seg)</label>
+                    <input 
+                      type="number" 
+                      value={timerConfig.trabajo}
+                      onChange={e => setTimerConfig({ ...timerConfig, trabajo: parseInt(e.target.value) || 0 })}
+                      className="w-full p-3 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Descanso (seg)</label>
+                    <input 
+                      type="number" 
+                      value={timerConfig.descanso}
+                      onChange={e => setTimerConfig({ ...timerConfig, descanso: parseInt(e.target.value) || 0 })}
+                      className="w-full p-3 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Rondas</label>
+                    <input 
+                      type="number" 
+                      value={timerConfig.rondas}
+                      onChange={e => setTimerConfig({ ...timerConfig, rondas: parseInt(e.target.value) || 1 })}
+                      className="w-full p-3 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Preparación (seg)</label>
+                    <input 
+                      type="number" 
+                      value={timerConfig.prep}
+                      onChange={e => setTimerConfig({ ...timerConfig, prep: parseInt(e.target.value) || 0 })}
+                      className="w-full p-3 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 2. PESTAÑA CREAR (CREADOR DE RUTINAS MANUAL) */}
+          {tab === 'crear' && (
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-xl font-black text-gray-900 dark:text-white">Diseñador Manual de Rutinas</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Arma tu plan desde cero añadiendo días y ejercicios a tu medida.</p>
+              </div>
+
+              {/* TÍTULO DE RUTINA */}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nombre de la rutina</label>
+                <input 
+                  type="text" 
+                  value={rutinaNueva.titulo}
+                  onChange={e => setRutinaNueva({ ...rutinaNueva, titulo: e.target.value })}
+                  className="w-full p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white"
+                />
+              </div>
+
+              {/* SELECCIÓN Y AGREGADO DE DÍAS */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-extrabold text-gray-400 uppercase tracking-wider">Días de Entrenamiento</span>
+                  <button onClick={agregarDiaManual} className="text-xs font-bold text-blue-600 hover:underline">
+                    + Añadir Día
+                  </button>
+                </div>
+                <div className="flex space-x-2 overflow-x-auto pb-1">
+                  {rutinaNueva.dias.map((d, idx) => (
+                    <button 
+                      key={idx}
+                      onClick={() => setDiaSel(idx)}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                        diaSel === idx 
+                          ? 'bg-blue-600 text-white shadow-md' 
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                      }`}
+                    >
+                      {d.nombre}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* NOMBRE DEL DÍA ACTUAL */}
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nombre de este día</label>
+                <input 
+                  type="text" 
+                  value={rutinaNueva.dias[diaSel]?.nombre || ''}
+                  onChange={e => {
+                    const copia = [...rutinaNueva.dias];
+                    copia[diaSel].nombre = e.target.value;
+                    setRutinaNueva({ ...rutinaNueva, dias: copia });
+                  }}
+                  className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold"
+                />
+              </div>
+
+              {/* FORMULARIO AGREGAR EJERCICIO */}
+              <div className="bg-gray-50 dark:bg-gray-800/60 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-3">
+                <span className="text-xs font-bold text-gray-800 dark:text-gray-200">Añadir Ejercicio al {rutinaNueva.dias[diaSel]?.nombre}</span>
+                <input 
+                  type="text" 
+                  placeholder="Ej: Press militar, Dominadas..." 
+                  value={nuevoEjNombre}
+                  onChange={e => setNuevoEjNombre(e.target.value)}
+                  className="w-full p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-medium"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[9px] font-bold text-gray-400 uppercase mb-0.5">Series</label>
+                    <input 
+                      type="number" 
+                      value={nuevoEjSeries}
+                      onChange={e => setNuevoEjSeries(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-gray-400 uppercase mb-0.5">Reps</label>
                     <input 
                       type="text" 
-                      value={formData.nombre}
-                      onChange={e => setFormData({ ...formData, nombre: e.target.value })}
-                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Género</label>
-                    <select 
-                      value={formData.genero}
-                      onChange={e => setFormData({ ...formData, genero: e.target.value })}
-                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold"
-                    >
-                      <option value="Hombre">Hombre</option>
-                      <option value="Mujer">Mujer</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Edad</label>
-                    <input 
-                      type="number" 
-                      value={formData.edad}
-                      onChange={e => setFormData({ ...formData, edad: e.target.value })}
-                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Estatura (cm)</label>
-                    <input 
-                      type="number" 
-                      value={formData.estatura}
-                      onChange={e => setFormData({ ...formData, estatura: e.target.value })}
-                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold"
+                      value={nuevoEjReps}
+                      onChange={e => setNuevoEjReps(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-medium"
                     />
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Objetivo</label>
-                    <select 
-                      value={formData.objetivo}
-                      onChange={e => setFormData({ ...formData, objetivo: e.target.value })}
-                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold"
-                    >
-                      <option value="Ganar músculo">Ganar músculo</option>
-                      <option value="Perder grasa">Perder grasa</option>
-                      <option value="Fuerza">Fuerza</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Días por semana</label>
-                    <select 
-                      value={formData.dias}
-                      onChange={e => setFormData({ ...formData, dias: e.target.value })}
-                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold"
-                    >
-                      <option value="2 días">2 días</option>
-                      <option value="3 días">3 días</option>
-                      <option value="4 días">4 días</option>
-                      <option value="5 días">5 días</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Equipo Disponible</label>
-                    <select 
-                      value={formData.equipo}
-                      onChange={e => setFormData({ ...formData, equipo: e.target.value })}
-                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold"
-                    >
-                      <option value="Gimnasio completo">Gimnasio completo</option>
-                      <option value="Mancuernas">Mancuernas</option>
-                      <option value="Calistenia">Calistenia</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Duración Sesión</label>
-                    <select 
-                      value={formData.duracion}
-                      onChange={e => setFormData({ ...formData, duracion: e.target.value })}
-                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold"
-                    >
-                      <option value="45 min">45 min</option>
-                      <option value="60 min">60 min</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Lesiones / Limitaciones</label>
-                  <select 
-                    value={formData.lesiones}
-                    onChange={e => setFormData({ ...formData, lesiones: e.target.value })}
-                    className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold"
-                  >
-                    <option value="Espalda baja (Evitar cargas axiales)">Espalda baja (Evitar cargas axiales)</option>
-                    <option value="Rodillas (Evitar gran flexión)">Rodillas (Evitar gran flexión)</option>
-                    <option value="Sin lesiones">Sin lesiones</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Nivel</label>
-                  <select 
-                    value={formData.nivel}
-                    onChange={e => setFormData({ ...formData, nivel: e.target.value })}
-                    className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold"
-                  >
-                    <option value="Principiante">Principiante</option>
-                    <option value="Intermedio">Intermedio</option>
-                    <option value="Avanzado">Avanzado</option>
-                  </select>
-                </div>
-
                 <button 
-                  type="submit" 
-                  disabled={loading}
-                  className="w-full py-4 bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 text-white font-black uppercase tracking-wider rounded-2xl text-xs shadow-lg shadow-blue-600/30 transition-all mt-2"
+                  onClick={agregarEjercicioManual}
+                  className="w-full py-2.5 bg-gray-900 dark:bg-gray-700 text-white font-bold rounded-xl text-xs"
                 >
-                  {loading ? 'PROCESANDO CON IA...' : 'GENERAR RUTINA CON IA'}
+                  + Agregar Ejercicio
                 </button>
-              </form>
-            )}
-
-            {/* 2. TAB ENTRENAR (Ver la rutina generada por la IA) */}
-            {tab === 'entrenar' && (
-              <div className="space-y-4">
-                {!rutinaActual ? (
-                  <div className="text-center py-10 text-gray-400 text-xs">
-                    Aún no has creado una rutina. Usa la pestaña <span className="font-bold text-blue-600">Generar</span>.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="font-extrabold text-base text-gray-900 dark:text-white">Rutina IA de {rutinaActual.usuario}</h3>
-                        <p className="text-[10px] text-gray-400">Objetivo: {rutinaActual.objetivo}</p>
-                      </div>
-                      <span className="px-2.5 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 font-bold text-[10px] rounded-lg">
-                        {rutinaActual.nivel}
-                      </span>
-                    </div>
-
-                    {rutinaActual.dias.map((dia, diaIdx) => (
-                      <div key={diaIdx} className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 space-y-3">
-                        <h4 className="font-bold text-xs text-blue-600">{dia.nombre}</h4>
-                        <div className="space-y-2">
-                          {dia.ejercicios.map((ej, ejIdx) => (
-                            <div key={ejIdx} className="bg-white dark:bg-gray-800 p-2.5 rounded-xl text-xs flex justify-between items-center shadow-sm">
-                              <span className="font-semibold text-gray-800 dark:text-gray-100">{ej.nombre}</span>
-                              <span className="text-gray-400 text-[10px]">{ej.series} series × {ej.repsBase} reps</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
-            )}
 
-            {/* 3. TAB SOCIAL (Comunidad e Influencers) */}
-            {tab === 'social' && (
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">Influencers & Comunidad</h2>
-                  <p className="text-xs text-gray-400">Combina tu plan IA con consejos y rutinas de creadores.</p>
-                </div>
-
-                <div className="flex space-x-3 overflow-x-auto pb-2">
-                  {influencers.map(inf => (
-                    <div key={inf.id} className="min-w-[130px] bg-gray-50 dark:bg-gray-800 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center space-y-2">
-                      <img src={inf.avatar} className="w-10 h-10 rounded-full object-cover" />
+              {/* LISTA DE EJERCICIOS AGREGADOS */}
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-gray-400 uppercase">Ejercicios en este día</span>
+                {rutinaNueva.dias[diaSel]?.ejercicios.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic py-2">No has agregado ejercicios aún.</p>
+                ) : (
+                  rutinaNueva.dias[diaSel]?.ejercicios.map((ej, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl text-xs">
                       <div>
-                        <p className="font-bold text-xs truncate max-w-[100px]">{inf.nombre}</p>
-                        <p className="text-[10px] text-gray-400">{inf.seguidores}</p>
+                        <p className="font-bold text-gray-800 dark:text-gray-100">{ej.nombre}</p>
+                        <p className="text-[10px] text-gray-400">{ej.series} series × {ej.repsBase} reps</p>
                       </div>
-                      <button 
-                        onClick={() => toggleFollow(inf.id)}
-                        className={`w-full py-1 rounded-xl text-[10px] font-bold ${inf.siguiendo ? 'bg-gray-200 text-gray-700' : 'bg-blue-600 text-white'}`}
-                      >
-                        {inf.siguiendo ? 'Siguiendo' : 'Seguir'}
+                      <button onClick={() => eliminarEjercicioManual(idx)} className="text-red-500 font-bold text-xs p-1">
+                        ✕
                       </button>
                     </div>
-                  ))}
-                </div>
+                  ))
+                )}
+              </div>
 
-                <div className="space-y-3">
-                  {POSTS_MOCK.map(post => (
-                    <div key={post.id} className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <img src={post.avatar} className="w-8 h-8 rounded-full object-cover" />
-                        <div>
-                          <p className="font-bold text-xs">{post.autor}</p>
-                          <p className="text-[9px] text-gray-400">{post.tiempo}</p>
+              <button 
+                onClick={guardarRutinaManual}
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black rounded-2xl text-xs uppercase shadow-lg shadow-blue-500/20"
+              >
+                GUARDAR Y EMPEZAR A ENTRENAR
+              </button>
+            </div>
+          )}
+
+          {/* 3. PESTAÑA GENERAR CON IA */}
+          {tab === 'generar' && (
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setLoading(true);
+              setTimeout(() => {
+                const nueva = motorIA_GenerarRutina(formData);
+                setRutinaActual(nueva);
+                setLoading(false);
+                setTab('entrenar');
+              }, 800);
+            }} className="space-y-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Diseña tu Rutina Inteligente</h2>
+                <p className="text-xs text-gray-400">Personalización adaptada a tu cuerpo y equipo.</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nombre</label>
+                  <input type="text" value={formData.nombre} onChange={e => setFormData({ ...formData, nombre: e.target.value })} className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Género</label>
+                  <select value={formData.genero} onChange={e => setFormData({ ...formData, genero: e.target.value })} className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold">
+                    <option value="Hombre">Hombre</option>
+                    <option value="Mujer">Mujer</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Objetivo</label>
+                  <select value={formData.objetivo} onChange={e => setFormData({ ...formData, objetivo: e.target.value })} className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold">
+                    <option value="Ganar músculo">Ganar músculo</option>
+                    <option value="Perder grasa">Perder grasa</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Días por semana</label>
+                  <select value={formData.dias} onChange={e => setFormData({ ...formData, dias: e.target.value })} className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold">
+                    <option value="3 días">3 días</option>
+                    <option value="4 días">4 días</option>
+                    <option value="5 días">5 días</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" disabled={loading} className="w-full py-4 bg-blue-600 text-white font-black uppercase tracking-wider rounded-2xl text-xs shadow-lg shadow-blue-600/30">
+                {loading ? 'GENERANDO...' : 'GENERAR RUTINA CON IA'}
+              </button>
+            </form>
+          )}
+
+          {/* 4. PESTAÑA ENTRENAR */}
+          {tab === 'entrenar' && (
+            <div className="space-y-4">
+              {!rutinaActual ? (
+                <div className="text-center py-10 text-gray-400 text-xs">Aún no tienes rutina. Crea o genera una.</div>
+              ) : (
+                <div className="space-y-4">
+                  <h3 className="font-extrabold text-base">Plan Activo: {rutinaActual.usuario}</h3>
+                  {rutinaActual.dias.map((dia, dIdx) => (
+                    <div key={dIdx} className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 space-y-2">
+                      <h4 className="font-bold text-xs text-blue-600">{dia.nombre}</h4>
+                      {dia.ejercicios.map((ej, eIdx) => (
+                        <div key={eIdx} className="bg-white dark:bg-gray-800 p-2.5 rounded-xl text-xs flex justify-between">
+                          <span className="font-bold">{ej.nombre}</span>
+                          <span className="text-gray-400 text-[10px]">{ej.series} series × {ej.repsBase} reps</span>
                         </div>
-                      </div>
-                      <p className="text-xs text-gray-700 dark:text-gray-300">{post.texto}</p>
+                      ))}
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+          )}
 
-            {/* TAB CREAR Y TIMER */}
-            {tab === 'crear' && <div className="text-center py-6 text-xs text-gray-400">Editor manual de rutinas activo.</div>}
-            {tab === 'timer' && <div className="text-center py-6 text-xs text-gray-400">Cronómetro e Intervalos HIIT listos.</div>}
+          {/* 5. PESTAÑA SOCIAL */}
+          {tab === 'social' && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-extrabold">Comunidad Fitness</h2>
+              {POSTS_MOCK.map(post => (
+                <div key={post.id} className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 space-y-2">
+                  <p className="font-bold text-xs">{post.autor}</p>
+                  <p className="text-xs text-gray-400">{post.texto}</p>
+                </div>
+              ))}
+            </div>
+          )}
 
-          </main>
         </div>
       );
     }
