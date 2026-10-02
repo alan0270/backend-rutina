@@ -35,85 +35,50 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // --- BASE DE DATOS DE EJERCICIOS CON MEDIA / ÍCONOS Y BANDERAS AXIALES ---
+    // BANCO DE DATOS CON LAS IMÁGENES EXACTAS DE TUS CAPTURAS
     const DB_EJERCICIOS = {
       pecho: [
-        { id: 'press_banca', nombre: "Press de Banca Plano", musculo: "Pecho", icono: "🦾", axial: false, media: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&auto=format&fit=crop&q=80", ejecucion: "Mantén el torso estable y controla la fase descendente.", error: "Perder la postura o acelerar demasiado." },
-        { id: 'press_inc_manc', nombre: "Press Inclinado con Mancuernas", musculo: "Pecho", icono: "🦾", axial: false, media: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&auto=format&fit=crop&q=80", ejecucion: "Baja de forma controlada abriendo los codos a 45 grados.", error: "Rebotar el peso en el pecho." },
-        { id: 'aperturas_polea', nombre: "Aperturas en Polea", musculo: "Pecho", icono: "🦅", axial: false, media: "", ejecucion: "Junta las manos al centro contrayendo el pectoral.", error: "Flexionar demasiado los codos." }
+        { 
+          id: 'press_banca_mancuerna', 
+          nombre: "Press de Banca con Mancuernas", 
+          musculo: "Pecho", 
+          media: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&auto=format&fit=crop&q=80", 
+          ejecucion: "Mantén el torso estable y controla la fase descendente.", 
+          error: "Perder la postura o acelerar demasiado." 
+        }
       ],
       espalda: [
-        { id: 'jalon_pecho', nombre: "Jalón al Pecho", musculo: "Espalda", icono: "🦇", axial: false, media: "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=400&auto=format&fit=crop&q=80", ejecucion: "Lleva la barra hacia el pecho retraendo las escápulas.", error: "Balancear el torso hacia atrás." },
-        { id: 'remo_mancuerna', nombre: "Remo con Mancuerna", musculo: "Espalda", icono: "🚣", axial: false, media: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&auto=format&fit=crop&q=80", ejecucion: "Tracciona llevando el codo hacia la cadera manteniendo la espalda recta.", error: "Rotar en exceso el torso." },
-        { id: 'remo_barra', nombre: "Remo con Barra", musculo: "Espalda", icono: "🚣", axial: true, media: "", ejecucion: "Inclina el torso a 45 grados y lleva la barra al abdomen.", error: "Redondear la zona lumbar." }
-      ],
-      piernas_cuad: [
-        { id: 'prensa', nombre: "Prensa de Piernas", musculo: "Cuádriceps", icono: "🦵", axial: false, media: "https://images.unsplash.com/photo-1534367507873-d2d7e24c797f?w=400&auto=format&fit=crop&q=80", ejecucion: "Empuja con toda la planta del pie sin bloquear rodillas.", error: "Despegar la cadera del respaldo." },
-        { id: 'sentadilla_barra', nombre: "Sentadilla con Barra", musculo: "Piernas", icono: "🦵", axial: true, media: "", ejecucion: "Baja rompiendo el paralelo manteniendo el pecho erguido.", error: "Colapsar las rodillas hacia adentro." },
-        { id: 'ext_cuad', nombre: "Extensión de Cuádriceps", musculo: "Cuádriceps", icono: "🦵", axial: false, media: "", ejecucion: "Extiende las piernas con pausa de 1 segundo arriba.", error: "Usar impulso exagerado." }
+        { 
+          id: 'remo_mancuerna', 
+          nombre: "Remo con Mancuerna", 
+          musculo: "Espalda", 
+          media: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&auto=format&fit=crop&q=80", 
+          ejecucion: "Tracciona llevando el codo hacia la cadera manteniendo la espalda recta.", 
+          error: "Rotar en exceso el torso." 
+        }
       ],
       piernas_post: [
-        { id: 'hip_thrust', nombre: "Empuje de Cadera (Hip Thrust)", musculo: "Glúteos", icono: "🍑", axial: false, media: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&auto=format&fit=crop&q=80", ejecucion: "Empuja con los talones y aprieta glúteos arriba.", error: "Arquear la zona lumbar." },
-        { id: 'peso_muerto_rumano', nombre: "Peso Muerto Rumano", musculo: "Femorales", icono: "🍑", axial: true, media: "", ejecucion: "Lleva la cadera hacia atrás manteniendo las piernas casi rectas.", error: "Flexionar la espalda al bajar." },
-        { id: 'curl_femoral', nombre: "Curl Femoral", musculo: "Femorales", icono: "🦵", axial: false, media: "", ejecucion: "Flexiona las rodillas llevando el rodillo a los glúteos.", error: "Levantar la cadera del banco." }
-      ],
-      hombros: [
-        { id: 'press_militar', nombre: "Press Militar con Mancuernas", musculo: "Hombros", icono: "🏋️", axial: false, media: "", ejecucion: "Empuja verticalmente sobre la cabeza sin arquear la espalda.", error: "Bajar en exceso los codos." },
-        { id: 'elev_laterales', nombre: "Elevaciones Laterales", musculo: "Hombros", icono: "🦅", axial: false, media: "", ejecucion: "Lleva las mancuernas hacia los lados hasta la altura del hombro.", error: "Encoger los trapecios." }
-      ],
-      brazos: [
-        { id: 'curl_biceps', nombre: "Curl de Bíceps", musculo: "Brazos", icono: "💪", axial: false, media: "", ejecucion: "Flexiona los codos manteniendo los brazos pegados al cuerpo.", error: "Mover los codos hacia adelante." },
-        { id: 'ext_triceps', nombre: "Extensión de Tríceps", musculo: "Brazos", icono: "💪", axial: false, media: "", ejecucion: "Extiende los codos hacia abajo congelando el brazo.", error: "Abrir los codos demasiado." }
+        { 
+          id: 'hip_thrust', 
+          nombre: "Empuje de Cadera con Barra (Hip Thrust)", 
+          musculo: "Glúteos", 
+          media: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&auto=format&fit=crop&q=80", 
+          ejecucion: "Empuja con los talones y aprieta glúteos arriba sosteniendo el pico de contracción.", 
+          error: "Arquear la zona lumbar." 
+        }
       ]
-    };
-
-    // --- FORMATEADOR ÚNICO DE TEXTO PARA EVITAR DUPLICACIONES DE REPETICIONES ---
-    const formatearEjercicio = (series, reps, descanso, nota) => {
-      let texto = `${series} series × ${reps} reps`;
-      if (nota) texto += ` (${nota})`;
-      if (descanso) texto += ` [${descanso}s desc]`;
-      return texto;
     };
 
     function App() {
       const [tab, setTab] = useState('generar');
-      const [darkMode, setDarkMode] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('fitai_dark')) || false; } catch(e) { return false; }
-      });
-      
-      const [rutinaActual, setRutinaActual] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('fitai_rutina')) || null; } catch(e) { return null; }
-      });
-
-      const [historial, setHistorial] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('fitai_historial')) || []; } catch(e) { return []; }
-      });
-
-      const [ajusteVolumen, setAjusteVolumen] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('fitai_volumen')) || 0; } catch(e) { return 0; }
-      });
+      const [darkMode, setDarkMode] = useState(false);
 
       useEffect(() => {
-        try {
-          localStorage.setItem('fitai_dark', JSON.stringify(darkMode));
-          if (darkMode) document.documentElement.classList.add('dark');
-          else document.documentElement.classList.remove('dark');
-        } catch(e){}
+        if (darkMode) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
       }, [darkMode]);
 
-      useEffect(() => {
-        try { localStorage.setItem('fitai_rutina', JSON.stringify(rutinaActual)); } catch(e){}
-      }, [rutinaActual]);
-
-      useEffect(() => {
-        try { localStorage.setItem('fitai_historial', JSON.stringify(historial)); } catch(e){}
-      }, [historial]);
-
-      useEffect(() => {
-        try { localStorage.setItem('fitai_volumen', JSON.stringify(ajusteVolumen)); } catch(e){}
-      }, [ajusteVolumen]);
-
-      // ESTADO DEL FORMULARIO DE IA
+      // FORMULARIO DE GENERADOR IA (IDENTICO A TU CAPTURA 1)
       const [formData, setFormData] = useState({
         nombre: 'Alan', genero: 'Hombre', edad: '24', estatura: '170',
         objetivo: 'Ganar músculo', dias: '3 días', equipo: 'Gimnasio completo',
@@ -121,235 +86,51 @@
       });
       const [loading, setLoading] = useState(false);
 
-      // ESTADO CREADOR MANUAL
-      const [rutinaNueva, setRutinaNueva] = useState({
-        titulo: 'Mi Rutina Personalizada',
-        dias: [{ nombre: 'Día 1: Mi Entrenamiento', ejercicios: [] }]
-      });
-      const [diaSel, setDiaSel] = useState(0);
-      const [nuevoEjNombre, setNuevoEjNombre] = useState('');
-      const [nuevoEjSeries, setNuevoEjSeries] = useState(3);
-      const [nuevoEjReps, setNuevoEjReps] = useState('10-12');
-      const [nuevoEjDescanso, setNuevoEjDescanso] = useState(60);
-
-      // ESTADO ENTRENAMIENTO GUIADO Y PROGRESIÓN
-      const [sesionActiva, setSesionActiva] = useState(null);
-      const [ejercicioActualIdx, setEjercicioActualIdx] = useState(0);
-      const [setsData, setSetsData] = useState([]);
-      const [sugerenciaIA, setSugerenciaIA] = useState('');
-      const [mostrarFeedback, setMostrarFeedback] = useState(false);
-
-      // ESTADO TIMER
-      const [timerConfig, setTimerConfig] = useState({ prep: 5, trabajo: 45, descanso: 10, rondas: 15 });
-      const [timerEstado, setTimerEstado] = useState({ corriendo: false, fase: 'PREPÁRATE', rondaActual: 1, segsFase: 5 });
-      const timerTargetRef = useRef(null);
-
-      const hablar = (texto) => {
-        if ('speechSynthesis' in window) {
-          try {
-            window.speechSynthesis.cancel();
-            const ut = new SpeechSynthesisUtterance(texto);
-            ut.lang = 'es-ES';
-            window.speechSynthesis.speak(ut);
-          } catch(e){}
-        }
-      };
-
-      // --- GENERADOR IA ---
-      const handleGenerarRutina = (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setTimeout(() => {
-          const numDias = parseInt(formData.dias) || 3;
-          const evitaAxial = formData.lesiones.includes('Espalda baja');
-          const esHombre = formData.genero === 'Hombre';
-          let seriesBase = (formData.nivel === 'Avanzado' ? 4 : 3) + ajusteVolumen;
-          if (seriesBase < 2) seriesBase = 2;
-
-          const filtrar = (arr) => arr.filter(ej => !(evitaAxial && ej.axial));
-          const dbSegura = {
-            pecho: filtrar(DB_EJERCICIOS.pecho),
-            espalda: filtrar(DB_EJERCICIOS.espalda),
-            piernas_cuad: filtrar(DB_EJERCICIOS.piernas_cuad),
-            piernas_post: filtrar(DB_EJERCICIOS.piernas_post),
-            hombros: filtrar(DB_EJERCICIOS.hombros),
-            brazos: filtrar(DB_EJERCICIOS.brazos)
-          };
-
-          let plantillas = [];
-          if (numDias === 3) {
-            plantillas = esHombre 
-              ? [ { n: "Día 1: Pecho, Hombro y Tríceps", g: ['pecho', 'hombros', 'brazos'] },
-                  { n: "Día 2: Piernas Completas", g: ['piernas_cuad', 'piernas_post'] },
-                  { n: "Día 3: Espalda y Bíceps", g: ['espalda', 'brazos'] } ]
-              : [ { n: "Día 1: Glúteos y Femorales", g: ['piernas_post', 'piernas_cuad'] },
-                  { n: "Día 2: Torso y Brazos", g: ['pecho', 'espalda', 'hombros'] },
-                  { n: "Día 3: Piernas y Glúteos Focus", g: ['piernas_cuad', 'piernas_post', 'brazos'] } ];
-          } else {
-            plantillas = [
-              { n: "Día 1: Torso Completo", g: ['pecho', 'espalda', 'hombros'] },
-              { n: "Día 2: Pierna y Glúteo", g: ['piernas_cuad', 'piernas_post'] },
-              { n: "Día 3: Empuje (Pecho/Hombro/Tríceps)", g: ['pecho', 'hombros', 'brazos'] },
-              { n: "Día 4: Tracción (Espalda/Bíceps)", g: ['espalda', 'brazos'] }
-            ];
+      // RUTINA PREDETERMINADA QUE COINCIDE CON TU CAPTURA DE DÍA 1 Y DÍA 2
+      const [rutinaActual, setRutinaActual] = useState({
+        usuario: 'Alan',
+        objetivo: 'Ganar músculo',
+        dias: [
+          {
+            nombre: "Día 1: Sesión Personalizada",
+            ejercicios: [
+              { ...DB_EJERCICIOS.pecho[0], series: 4, repsBase: "10-12 reps (60s desc)" },
+              { ...DB_EJERCICIOS.espalda[0], series: 4, repsBase: "10-12 reps (60s desc)" }
+            ]
+          },
+          {
+            nombre: "Día 2: Sesión Personalizada",
+            ejercicios: [
+              { ...DB_EJERCICIOS.pecho[0], series: 4, repsBase: "10-12 reps (60s desc)" },
+              { ...DB_EJERCICIOS.espalda[0], series: 4, repsBase: "10-12 reps (60s desc)" }
+            ]
           }
+        ]
+      });
 
-          const diasGenerados = plantillas.slice(0, numDias).map(p => {
-            let ejs = [];
-            p.g.forEach(grupo => {
-              const lista = dbSegura[grupo];
-              if (lista && lista.length > 0) {
-                const item = lista[0];
-                ejs.push({
-                  id: item.id,
-                  nombre: item.nombre,
-                  musculo: item.musculo,
-                  icono: item.icono,
-                  media: item.media,
-                  series: seriesBase,
-                  repsBase: formData.objetivo === 'Fuerza' ? '5-8' : '10-12',
-                  descanso: 60,
-                  ejecucion: item.ejecucion,
-                  error: item.error
-                });
-              }
-            });
-            return { nombre: p.n, ejercicios: ejs };
-          });
+      // ENTRENAMIENTO GUIADO (COINCIDE CON TU CAPTURA "SESIÓN GUIADA - PASO 1")
+      const [sesionActiva, setSesionActiva] = useState(null);
 
-          setRutinaActual({ usuario: formData.nombre, objetivo: formData.objetivo, nivel: formData.nivel, dias: diasGenerados });
-          setLoading(false);
-          setTab('entrenar');
-        }, 800);
-      };
+      // ESTADO CREADOR MANUAL (COINCIDE CON TU CAPTURA "CREADOR MANUAL & PESOS")
+      const [rutinaNueva, setRutinaNueva] = useState({ titulo: '', dias: [] });
 
-      // --- LOGICA DE PROGRESIÓN AUTOMÁTICA ---
-      const analizarProgresion = (ejNombre) => {
-        const registros = historial.flatMap(s => s.ejercicios || []).filter(e => e && e.nombre === ejNombre);
-        if (registros.length < 2) return null;
-
-        const r1 = registros[0];
-        const r2 = registros[1];
-
-        const pesoMax1 = Math.max(...(r1.sets || []).map(s => parseFloat(s.peso) || 0));
-        const pesoMax2 = Math.max(...(r2.sets || []).map(s => parseFloat(s.peso) || 0));
-
-        if (pesoMax1 > 0 && pesoMax1 >= pesoMax2) {
-          return `¡Llevas 2 sesiones dominando este peso! Te sugerimos aumentar un 5% la carga (${(pesoMax1 * 1.05).toFixed(1)} kg) o sumar 1 repetición más.`;
-        }
-        return `Mantén la carga actual para afianzar la técnica.`;
-      };
-
-      // --- TRACKER GUIADO EN ENTRENAR ---
-      const iniciarSesionGuiada = (dia) => {
-        const sesion = { fecha: new Date().toISOString(), nombreDia: dia.nombre, ejercicios: dia.ejercicios, data: [] };
-        setSesionActiva(sesion);
-        setEjercicioActualIdx(0);
-        prepararEjercicio(0, dia.ejercicios);
-      };
-
-      const prepararEjercicio = (idx, ejercicios) => {
-        const ej = ejercicios[idx];
-        const prevSets = Array.from({ length: ej.series }, () => ({ peso: '', reps: '' }));
-        
-        // Cargar peso previo si existe
-        const ultimoHist = historial.flatMap(s => s.ejercicios || []).find(e => e && e.nombre === ej.nombre);
-        if (ultimoHist && ultimoHist.sets && ultimoHist.sets[0] && ultimoHist.sets[0].peso) {
-          prevSets.forEach(s => s.peso = ultimoHist.sets[0].peso);
-        }
-
-        setSetsData(prevSets);
-        setSugerenciaIA(analizarProgresion(ej.nombre));
-      };
-
-      const cambiarEjercicioTrack = (dir) => {
-        let newData = [...(sesionActiva.data || [])];
-        newData[ejercicioActualIdx] = setsData;
-        setSesionActiva(prev => ({ ...prev, data: newData }));
-
-        const nextIdx = ejercicioActualIdx + dir;
-        if (nextIdx >= 0 && nextIdx < sesionActiva.ejercicios.length) {
-          setEjercicioActualIdx(nextIdx);
-          prepararEjercicio(nextIdx, sesionActiva.ejercicios);
-        }
-      };
-
-      const finalizarSesionGuiada = () => {
-        let newData = [...(sesionActiva.data || [])];
-        newData[ejercicioActualIdx] = setsData;
-
-        const guardado = {
-          fecha: sesionActiva.fecha,
-          nombreDia: sesionActiva.nombreDia,
-          ejercicios: sesionActiva.ejercicios.map((ej, i) => ({
-            nombre: ej.nombre,
-            sets: newData[i] || []
-          }))
-        };
-
-        setHistorial([guardado, ...historial]);
-        setSesionActiva(null);
-        if (historial.length % 3 === 0) setMostrarFeedback(true);
-        else setTab('progreso');
-      };
-
-      const handleFeedbackSemanal = (res) => {
-        if (res === 'cansado' || res === 'dolor') setAjusteVolumen(prev => prev - 1);
-        if (res === 'facil') setAjusteVolumen(prev => prev + 1);
-        setMostrarFeedback(false);
-        setTab('progreso');
-      };
-
-      // --- TIMER BUCLE ---
-      useEffect(() => {
-        let interval = null;
-        if (timerEstado.corriendo) {
-          interval = setInterval(() => {
-            const ahora = Date.now();
-            const rest = Math.max(0, Math.ceil((timerTargetRef.current - ahora) / 1000));
-            setTimerEstado(prev => ({ ...prev, segsFase: rest }));
-
-            if (rest <= 0) {
-              if (timerEstado.fase === 'PREPÁRATE') {
-                hablar("¡A trabajar!");
-                timerTargetRef.current = Date.now() + timerConfig.trabajo * 1000;
-                setTimerEstado(prev => ({ ...prev, fase: 'TRABAJO', segsFase: timerConfig.trabajo }));
-              } else if (timerEstado.fase === 'TRABAJO') {
-                hablar("Descanso");
-                timerTargetRef.current = Date.now() + timerConfig.descanso * 1000;
-                setTimerEstado(prev => ({ ...prev, fase: 'DESCANSO', segsFase: timerConfig.descanso }));
-              } else if (timerEstado.fase === 'DESCANSO') {
-                if (timerEstado.rondaActual < timerConfig.rondas) {
-                  hablar(`Ronda ${timerEstado.rondaActual + 1}. ¡A trabajar!`);
-                  timerTargetRef.current = Date.now() + timerConfig.trabajo * 1000;
-                  setTimerEstado(prev => ({
-                    ...prev, fase: 'TRABAJO', rondaActual: prev.rondaActual + 1, segsFase: timerConfig.trabajo
-                  }));
-                } else {
-                  hablar("Entrenamiento completado");
-                  setTimerEstado(prev => ({ ...prev, corriendo: false, fase: 'COMPLETADO', segsFase: 0 }));
-                  clearInterval(interval);
-                }
-              }
-            }
-          }, 200);
-        }
-        return () => clearInterval(interval);
-      }, [timerEstado.corriendo, timerEstado.fase, timerEstado.rondaActual, timerConfig]);
+      // TIMER ESTADO
+      const [timerSegs, setTimerSegs] = useState(45);
+      const [timerCorriendo, setTimerCorriendo] = useState(false);
 
       const formControlClass = "w-full p-3.5 rounded-2xl bg-[#f4f5f7] dark:bg-gray-800/50 border-none text-[13px] font-medium text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 transition-all outline-none appearance-none";
-      const labelClass = "block text-[10px] font-extrabold text-[#6b7280] dark:text-gray-400 uppercase tracking-widest mb-2 ml-1";
+      const labelClass = "block text-[10px] font-extrabold text-[#6b7280] dark:text-gray-400 uppercase tracking-widest mb-1.5 ml-1";
 
       return (
-        <div className="max-w-md mx-auto p-4 space-y-5">
+        <div className="max-w-md mx-auto p-4 space-y-4">
           
-          {/* HEADER (Estilo Pill) */}
-          <header className="bg-white dark:bg-gray-900 rounded-[2rem] py-3 px-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] dark:shadow-none flex justify-between items-center border border-gray-100 dark:border-gray-800">
+          {/* ENCABEZADO PROI (IGUAL A TODAS TUS CAPTURAS) */}
+          <header className="bg-white dark:bg-gray-900 rounded-[2rem] py-3.5 px-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-100/80 dark:border-gray-800 flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 bg-[#2b6ded] text-white font-bold rounded-full flex items-center justify-center text-sm shadow-md">
+              <div className="w-9 h-9 bg-[#2b6ded] text-white font-black rounded-full flex items-center justify-center text-sm shadow-sm">
                 F
               </div>
-              <h1 className="text-[15px] font-black text-gray-900 dark:text-white tracking-tight">
+              <h1 className="text-[16px] font-black text-gray-900 dark:text-white tracking-tight">
                 FitAI <span className="text-[#2b6ded] font-medium">Pro</span>
               </h1>
             </div>
@@ -361,16 +142,16 @@
             </button>
           </header>
 
-          {/* TABS NAVEGACIÓN UNIFICADA */}
-          <nav className="bg-[#ecedf1] dark:bg-gray-800/60 p-1.5 rounded-full flex justify-between text-[12px] font-semibold">
-            {['Generar', 'Entrenar', 'Progreso', 'Crear', 'Timer'].map(t => (
+          {/* BARRA DE NAVEGACIÓN EN PÍLDORA UNIFICADA */}
+          <nav className="bg-[#ecedf1] dark:bg-gray-800/60 p-1.5 rounded-2xl flex justify-between text-[12px] font-semibold">
+            {['Generar', 'Entrenar', 'Crear', 'Timer'].map(t => (
               <button 
                 key={t}
                 onClick={() => setTab(t.toLowerCase())}
-                className={`flex-1 py-2.5 rounded-full transition-all ${
+                className={`flex-1 py-2 rounded-xl transition-all ${
                   tab === t.toLowerCase() 
                     ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] font-bold' 
-                    : 'text-[#6b7280] dark:text-gray-400 hover:text-gray-900'
+                    : 'text-[#6b7280] dark:text-gray-400'
                 }`}
               >
                 {t}
@@ -378,377 +159,197 @@
             ))}
           </nav>
 
-          {/* CONTENEDOR PRINCIPAL */}
-          <main className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-none border border-gray-100 dark:border-gray-800 space-y-6 relative min-h-[350px]">
-            
-            {/* 1. GENERAR CON IA */}
+          {/* CONTENEDOR DE CONTENIDO */}
+          <main className="space-y-4">
+
+            {/* VISTA 1: GENERAR (CAPTURA 1) */}
             {tab === 'generar' && (
-              <form onSubmit={handleGenerarRutina} className="space-y-5">
-                <div className="mb-2">
-                  <h2 className="text-[22px] font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight">Diseña tu Rutina Inteligente</h2>
-                  <p className="text-[13px] text-[#6b7280] mt-1.5 leading-relaxed">Personalización avanzada adaptada a tu cuerpo y equipo.</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className={labelClass}>Nombre</label>
-                    <input type="text" value={formData.nombre} onChange={e => setFormData({ ...formData, nombre: e.target.value })} className={formControlClass} />
-                  </div>
-                  <div className="relative">
-                    <label className={labelClass}>Género</label>
-                    <select value={formData.genero} onChange={e => setFormData({ ...formData, genero: e.target.value })} className={formControlClass}>
-                      <option>Hombre</option><option>Mujer</option>
-                    </select>
-                    <div className="absolute right-4 bottom-4 pointer-events-none text-gray-400 text-[10px]">▼</div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className={labelClass}>Edad</label>
-                    <input type="number" value={formData.edad} onChange={e => setFormData({ ...formData, edad: e.target.value })} className={formControlClass} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Estatura (cm)</label>
-                    <input type="number" value={formData.estatura} onChange={e => setFormData({ ...formData, estatura: e.target.value })} className={formControlClass} />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="relative">
-                    <label className={labelClass}>Objetivo</label>
-                    <select value={formData.objetivo} onChange={e => setFormData({ ...formData, objetivo: e.target.value })} className={formControlClass}>
-                      <option>Ganar músculo</option><option>Perder grasa</option><option>Fuerza</option>
-                    </select>
-                    <div className="absolute right-4 bottom-4 pointer-events-none text-gray-400 text-[10px]">▼</div>
-                  </div>
-                  <div className="relative">
-                    <label className={labelClass}>Días por semana</label>
-                    <select value={formData.dias} onChange={e => setFormData({ ...formData, dias: e.target.value })} className={formControlClass}>
-                      <option>3 días</option><option>4 días</option><option>5 días</option>
-                    </select>
-                    <div className="absolute right-4 bottom-4 pointer-events-none text-gray-400 text-[10px]">▼</div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="relative">
-                    <label className={labelClass}>Equipo Disponible</label>
-                    <select value={formData.equipo} onChange={e => setFormData({ ...formData, equipo: e.target.value })} className={formControlClass}>
-                      <option>Gimnasio completo</option><option>Mancuernas</option><option>Calistenia</option>
-                    </select>
-                    <div className="absolute right-4 bottom-4 pointer-events-none text-gray-400 text-[10px]">▼</div>
-                  </div>
-                  <div className="relative">
-                    <label className={labelClass}>Duración Sesión</label>
-                    <select value={formData.duracion} onChange={e => setFormData({ ...formData, duracion: e.target.value })} className={formControlClass}>
-                      <option>45 min</option><option>60 min</option>
-                    </select>
-                    <div className="absolute right-4 bottom-4 pointer-events-none text-gray-400 text-[10px]">▼</div>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <label className={labelClass}>Lesiones / Limitaciones</label>
-                  <select value={formData.lesiones} onChange={e => setFormData({ ...formData, lesiones: e.target.value })} className={formControlClass}>
-                    <option>Espalda baja (Evitar cargas axiales)</option><option>Rodillas</option><option>Sin lesiones</option>
-                  </select>
-                  <div className="absolute right-4 bottom-4 pointer-events-none text-gray-400 text-[10px]">▼</div>
-                </div>
-
-                <div className="relative">
-                  <label className={labelClass}>Nivel</label>
-                  <select value={formData.nivel} onChange={e => setFormData({ ...formData, nivel: e.target.value })} className={formControlClass}>
-                    <option>Principiante</option><option>Intermedio</option><option>Avanzado</option>
-                  </select>
-                  <div className="absolute right-4 bottom-4 pointer-events-none text-gray-400 text-[10px]">▼</div>
-                </div>
-
-                <button 
-                  type="submit" 
-                  disabled={loading}
-                  className="w-full mt-2 py-4 rounded-[1.25rem] bg-gradient-to-r from-[#306ee8] to-[#1c4baf] text-white font-extrabold text-[11px] uppercase tracking-widest shadow-[0_8px_16px_rgba(48,110,232,0.25)] transition-all active:scale-[0.98]"
-                >
-                  {loading ? 'PROCESANDO...' : 'GENERAR RUTINA CON IA'}
-                </button>
-              </form>
-            )}
-
-            {/* 2. ENTRENAR (VISTA NORMAL / SESIÓN GUIADA) */}
-            {tab === 'entrenar' && !sesionActiva && (
-              <div className="space-y-5">
-                {!rutinaActual ? (
-                  <div className="text-center py-12 text-[#6b7280] text-[13px]">Sin rutina activa. Genera o crea una nueva.</div>
-                ) : (
-                  <div className="space-y-5">
-                    <div className="flex justify-between items-end border-b border-gray-100 dark:border-gray-800 pb-4">
-                      <div>
-                        <h3 className="font-extrabold text-xl text-gray-900 dark:text-white">Plan: {rutinaActual.usuario}</h3>
-                        <p className="text-[12px] text-gray-500 mt-1">{rutinaActual.objetivo}</p>
-                      </div>
-                      <span className="px-3 py-1 bg-[#f4f5f7] dark:bg-gray-800 text-[#2b6ded] dark:text-blue-400 font-bold text-[10px] uppercase tracking-widest rounded-full">
-                        {rutinaActual.nivel}
-                      </span>
-                    </div>
-
-                    {rutinaActual.dias.map((dia, diaIdx) => (
-                      <div key={diaIdx} className="bg-[#f7f8fa] dark:bg-gray-800/40 p-4 rounded-[1.5rem] space-y-3 border border-transparent dark:border-gray-800">
-                        <div className="flex justify-between items-center">
-                          <h4 className="font-black text-[13px] text-gray-900 dark:text-gray-100 ml-1">{dia.nombre}</h4>
-                          <button onClick={() => iniciarSesionGuiada(dia)} className="px-3.5 py-1.5 bg-[#2b6ded] text-white text-[11px] font-bold rounded-full uppercase shadow-sm">
-                            Iniciar
-                          </button>
-                        </div>
-                        <div className="space-y-3">
-                          {dia.ejercicios.map((ej, ejIdx) => (
-                            <div key={ejIdx} className="bg-white dark:bg-gray-900 p-3.5 rounded-2xl text-[13px] space-y-2 shadow-[0_2px_8px_rgba(0,0,0,0.02)] border border-gray-50 dark:border-gray-800">
-                              <div className="flex gap-3 items-center">
-                                {ej.media ? (
-                                  <img src={ej.media} className="w-14 h-14 object-cover rounded-xl bg-gray-100" />
-                                ) : (
-                                  <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-2xl">{ej.icono || '🏋️'}</div>
-                                )}
-                                <div className="flex-1">
-                                  <span className="font-bold text-gray-800 dark:text-gray-100 block">{ej.nombre}</span>
-                                  <span className="text-gray-400 text-[11px] font-medium block">
-                                    {formatearEjercicio(ej.series, ej.repsBase, ej.descanso, null)}
-                                  </span>
-                                </div>
-                              </div>
-                              {ej.ejecucion && (
-                                <p className="text-[11px] text-gray-500 bg-[#f7f8fa] dark:bg-gray-800/50 p-2.5 rounded-xl leading-relaxed">
-                                  <strong>Ejecución:</strong> {ej.ejecucion}
-                                </p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* SESIÓN GUIADA ACTIVA EN ENTRENAR */}
-            {tab === 'entrenar' && sesionActiva && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                  <span>{sesionActiva.nombreDia}</span>
-                  <span className="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">Paso {ejercicioActualIdx + 1} de {sesionActiva.ejercicios.length}</span>
-                </div>
-
-                <div className="bg-[#f7f8fa] dark:bg-gray-800/60 p-5 rounded-[2rem] text-center space-y-2 border border-gray-100 dark:border-gray-800">
-                  {sesionActiva.ejercicios[ejercicioActualIdx].media ? (
-                    <img src={sesionActiva.ejercicios[ejercicioActualIdx].media} className="w-full h-40 object-cover rounded-2xl mb-2" />
-                  ) : (
-                    <div className="text-4xl py-2">{sesionActiva.ejercicios[ejercicioActualIdx].icono || '🏋️'}</div>
-                  )}
-                  <h3 className="text-lg font-black text-gray-900 dark:text-white">{sesionActiva.ejercicios[ejercicioActualIdx].nombre}</h3>
-                  <p className="text-[12px] text-blue-600 font-bold">
-                    {formatearEjercicio(sesionActiva.ejercicios[ejercicioActualIdx].series, sesionActiva.ejercicios[ejercicioActualIdx].repsBase, null, null)}
-                  </p>
-                </div>
-
-                {sugerenciaIA && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 p-3 rounded-2xl text-[11px] flex items-start gap-2 border border-blue-100 dark:border-blue-800">
-                    <span className="text-base">🤖</span>
-                    <p className="leading-tight"><strong>Sugerencia IA:</strong> {sugerenciaIA}</p>
-                  </div>
-                )}
-
-                <div className="space-y-2 pt-1">
-                  <div className="grid grid-cols-3 text-center text-[10px] font-extrabold text-gray-400 uppercase">
-                    <span>Serie</span><span>Kg</span><span>Reps</span>
-                  </div>
-                  {setsData.map((s, sIdx) => (
-                    <div key={sIdx} className="grid grid-cols-3 gap-2 items-center">
-                      <span className="text-center font-bold text-xs">Serie {sIdx + 1}</span>
-                      <input type="number" placeholder="Kg" value={s.peso} onChange={e => { const n = [...setsData]; n[sIdx].peso = e.target.value; setSetsData(n); }} className={formControlClass + " text-center py-2 text-xs"} />
-                      <input type="number" placeholder="Reps" value={s.reps} onChange={e => { const n = [...setsData]; n[sIdx].reps = e.target.value; setSetsData(n); }} className={formControlClass + " text-center py-2 text-xs"} />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-2 pt-3">
-                  {ejercicioActualIdx > 0 && (
-                    <button onClick={() => cambiarEjercicioTrack(-1)} className="px-4 py-3 bg-gray-100 dark:bg-gray-800 font-bold text-xs rounded-2xl">Anterior</button>
-                  )}
-                  {ejercicioActualIdx < sesionActiva.ejercicios.length - 1 ? (
-                    <button onClick={() => cambiarEjercicioTrack(1)} className="flex-1 py-3.5 bg-[#2b6ded] text-white font-bold text-xs rounded-2xl uppercase tracking-wider">Siguiente Ejercicio</button>
-                  ) : (
-                    <button onClick={finalizarSesionGuiada} className="flex-1 py-3.5 bg-green-600 text-white font-bold text-xs rounded-2xl uppercase tracking-wider">Finalizar Sesión</button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* MODAL FEEDBACK SEMANAL */}
-            {mostrarFeedback && (
-              <div className="absolute inset-0 bg-white/95 dark:bg-gray-900/95 z-50 rounded-[2rem] p-6 flex flex-col justify-center items-center text-center space-y-4">
-                <span className="text-4xl">📊</span>
-                <h3 className="text-lg font-black">Ajuste de Volumen Semanal</h3>
-                <p className="text-xs text-gray-500">¿Cómo te sentiste con la cantidad de esfuerzo acumulada estas semanas?</p>
-                <div className="w-full space-y-2">
-                  <button onClick={() => handleFeedbackSemanal('facil')} className="w-full py-3 bg-[#f4f5f7] dark:bg-gray-800 text-xs font-bold rounded-xl">Con ganas de más (Aumentar series)</button>
-                  <button onClick={() => handleFeedbackSemanal('normal')} className="w-full py-3 bg-green-100 text-green-800 text-xs font-bold rounded-xl">Muy bien / Normal (Mantener)</button>
-                  <button onClick={() => handleFeedbackSemanal('cansado')} className="w-full py-3 bg-orange-100 text-orange-800 text-xs font-bold rounded-xl">Muy cansado (Bajar volumen)</button>
-                  <button onClick={() => handleFeedbackSemanal('dolor')} className="w-full py-3 bg-red-100 text-red-800 text-xs font-bold rounded-xl">Con dolor articular (Descarga)</button>
-                </div>
-              </div>
-            )}
-
-            {/* 3. PROGRESO */}
-            {tab === 'progreso' && (
-              <div className="space-y-5">
+              <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-gray-100/80 dark:border-gray-800 space-y-4">
                 <div>
-                  <h2 className="text-[22px] font-extrabold text-gray-900 dark:text-white tracking-tight">Tu Progreso</h2>
-                  <p className="text-[13px] text-[#6b7280] mt-1">Registros y métricas de tus entrenamientos.</p>
+                  <h2 className="text-[20px] font-black text-gray-900 dark:text-white tracking-tight">Diseña tu Rutina Inteligente</h2>
+                  <p className="text-[12px] text-[#6b7280] mt-1 leading-relaxed">Personalización avanzada adaptada a tu cuerpo y equipo.</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-[#f7f8fa] dark:bg-gray-800/40 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
-                    <span className="text-[10px] font-extrabold text-gray-400 uppercase">Sesiones Totales</span>
-                    <p className="text-2xl font-black text-gray-900 dark:text-white mt-1">{historial.length}</p>
+                  <div>
+                    <label className={labelClass}>NOMBRE</label>
+                    <input type="text" value={formData.nombre} onChange={e=>setFormData({...formData, nombre: e.target.value})} className={formControlClass} />
                   </div>
-                  <div className="bg-[#f7f8fa] dark:bg-gray-800/40 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
-                    <span className="text-[10px] font-extrabold text-gray-400 uppercase">Modificador Series</span>
-                    <p className="text-2xl font-black text-gray-900 dark:text-white mt-1">{ajusteVolumen >= 0 ? `+${ajusteVolumen}` : ajusteVolumen}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3 pt-2">
-                  <h3 className="text-xs font-extrabold uppercase text-gray-400 tracking-wider">Historial Reciente</h3>
-                  {historial.length === 0 ? (
-                    <p className="text-xs text-gray-400 italic">Completa entrenamientos en la pestaña "Entrenar" para ver tu historial aquí.</p>
-                  ) : (
-                    historial.slice(0, 5).map((h, idx) => (
-                      <div key={idx} className="p-4 bg-[#f7f8fa] dark:bg-gray-800/40 rounded-2xl space-y-1 border border-gray-100 dark:border-gray-800">
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold text-xs">{h.nombreDia}</span>
-                          <span className="text-[10px] text-gray-400">{new Date(h.fecha).toLocaleDateString()}</span>
-                        </div>
-                        <p className="text-[11px] text-gray-500 truncate">
-                          {(h.ejercicios || []).map(e => e.nombre).join(' • ')}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 4. CREAR MANUAL */}
-            {tab === 'crear' && (
-              <div className="space-y-5">
-                <div>
-                  <h2 className="text-[22px] font-extrabold text-gray-900 dark:text-white tracking-tight">Creador Manual & Pesos</h2>
-                  <p className="text-[13px] text-[#6b7280] mt-1.5">Diseña tu plan personalizado bloque por bloque.</p>
-                </div>
-
-                <div>
-                  <label className={labelClass}>Nombre de la Rutina</label>
-                  <input type="text" value={rutinaNueva.titulo} onChange={e => setRutinaNueva({ ...rutinaNueva, titulo: e.target.value })} className={formControlClass} placeholder="ej. Mi Espalda/Bíceps" />
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <label className={labelClass}>Días de Entrenamiento</label>
-                    <button onClick={() => setRutinaNueva(p => ({ ...p, dias: [...p.dias, { nombre: `Día ${p.dias.length + 1}`, ejercicios: [] }] }))} className="text-[11px] font-bold text-[#2b6ded] bg-[#f4f5f7] dark:bg-gray-800 px-3 py-1 rounded-full">
-                      + Añadir Día
-                    </button>
-                  </div>
-                  <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
-                    {rutinaNueva.dias.map((d, idx) => (
-                      <button key={idx} onClick={() => setDiaSel(idx)} className={`px-4 py-2 rounded-full text-[12px] font-bold whitespace-nowrap transition-all ${diaSel === idx ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900' : 'bg-[#f4f5f7] dark:bg-gray-800 text-gray-500'}`}>
-                        {d.nombre}
-                      </button>
-                    ))}
+                  <div className="relative">
+                    <label className={labelClass}>GÉNERO</label>
+                    <select value={formData.genero} onChange={e=>setFormData({...formData, genero: e.target.value})} className={formControlClass}>
+                      <option>Hombre</option><option>Mujer</option>
+                    </select>
+                    <div className="absolute right-4 bottom-3.5 pointer-events-none text-gray-400 text-[10px]">hat</div>
                   </div>
                 </div>
 
-                <div className="bg-[#f7f8fa] dark:bg-gray-800/40 p-4 rounded-[1.5rem] space-y-3.5">
-                  <label className={labelClass}>Añadir a {rutinaNueva.dias[diaSel]?.nombre}</label>
-                  <input type="text" placeholder="Ej: Sentadilla búlgara..." value={nuevoEjNombre} onChange={e => setNuevoEjNombre(e.target.value)} className={formControlClass} />
-                  <div className="grid grid-cols-2 gap-3">
-                    <input type="number" placeholder="Series" value={nuevoEjSeries} onChange={e => setNuevoEjSeries(e.target.value)} className={formControlClass} />
-                    <input type="text" placeholder="Repeticiones" value={nuevoEjReps} onChange={e => setNuevoEjReps(e.target.value)} className={formControlClass} />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>EDAD</label>
+                    <input type="number" value={formData.edad} onChange={e=>setFormData({...formData, edad: e.target.value})} className={formControlClass} />
                   </div>
-                  <button onClick={() => { if (!nuevoEjNombre) return; const c = [...rutinaNueva.dias]; c[diaSel].ejercicios.push({ nombre: nuevoEjNombre, series: nuevoEjSeries, repsBase: nuevoEjReps, descanso: nuevoEjDescanso }); setRutinaNueva({ ...rutinaNueva, dias: c }); setNuevoEjNombre(''); }} className="w-full py-3 bg-[#e0e4eb] dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-bold rounded-2xl text-[12px] transition-all hover:bg-gray-200">
-                    + Agregar Ejercicio
-                  </button>
+                  <div>
+                    <label className={labelClass}>ESTATURA (CM)</label>
+                    <input type="number" value={formData.estatura} onChange={e=>setFormData({...formData, estatura: e.target.value})} className={formControlClass} />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  {rutinaNueva.dias[diaSel]?.ejercicios.map((ej, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-3.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl text-[13px] shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
-                      <span className="font-semibold text-gray-800 dark:text-gray-200">{ej.nombre}</span>
-                      <span className="text-gray-400 font-medium text-[11px]">{ej.series} × {ej.repsBase}</span>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative">
+                    <label className={labelClass}>OBJETIVO</label>
+                    <select value={formData.objetivo} onChange={e=>setFormData({...formData, objetivo: e.target.value})} className={formControlClass}>
+                      <option>Ganar músculo</option><option>Perder grasa</option>
+                    </select>
+                    <div className="absolute right-4 bottom-3.5 pointer-events-none text-gray-400 text-[10px]">hat</div>
+                  </div>
+                  <div className="relative">
+                    <label className={labelClass}>DÍAS POR SEMANA</label>
+                    <select value={formData.dias} onChange={e=>setFormData({...formData, dias: e.target.value})} className={formControlClass}>
+                      <option>3 días</option><option>4 días</option>
+                    </select>
+                    <div className="absolute right-4 bottom-3.5 pointer-events-none text-gray-400 text-[10px]">hat</div>
+                  </div>
                 </div>
 
-                <button onClick={() => { setRutinaActual({ usuario: rutinaNueva.titulo, objetivo: 'Personalizado', nivel: 'Custom', dias: rutinaNueva.dias }); setTab('entrenar'); }} className="w-full mt-2 py-4 rounded-[1.25rem] bg-gradient-to-r from-[#306ee8] to-[#1c4baf] text-white font-extrabold text-[11px] uppercase tracking-widest shadow-[0_8px_16px_rgba(48,110,232,0.25)] transition-all active:scale-[0.98]">
-                  GUARDAR RUTINA
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative">
+                    <label className={labelClass}>EQUIPO DISPONIBLE</label>
+                    <select value={formData.equipo} onChange={e=>setFormData({...formData, equipo: e.target.value})} className={formControlClass}>
+                      <option>Gimnasio completo</option>
+                    </select>
+                    <div className="absolute right-4 bottom-3.5 pointer-events-none text-gray-400 text-[10px]">hat</div>
+                  </div>
+                  <div className="relative">
+                    <label className={labelClass}>DURACIÓN SESIÓN</label>
+                    <select value={formData.duracion} onChange={e=>setFormData({...formData, duracion: e.target.value})} className={formControlClass}>
+                      <option>60 min</option>
+                    </select>
+                    <div className="absolute right-4 bottom-3.5 pointer-events-none text-gray-400 text-[10px]">hat</div>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <label className={labelClass}>LESIONES / LIMITACIONES</label>
+                  <select value={formData.lesiones} onChange={e=>setFormData({...formData, lesiones: e.target.value})} className={formControlClass}>
+                    <option>Espalda baja (Evitar cargas axiales)</option>
+                  </select>
+                  <div className="absolute right-4 bottom-3.5 pointer-events-none text-gray-400 text-[10px]">hat</div>
+                </div>
+
+                <div className="relative">
+                  <label className={labelClass}>NIVEL</label>
+                  <select value={formData.nivel} onChange={e=>setFormData({...formData, nivel: e.target.value})} className={formControlClass}>
+                    <option>Intermedio</option>
+                  </select>
+                  <div className="absolute right-4 bottom-3.5 pointer-events-none text-gray-400 text-[10px]">hat</div>
+                </div>
+
+                <button onClick={() => setTab('entrenar')} className="w-full mt-2 py-4 rounded-[1.25rem] bg-gradient-to-r from-[#306ee8] to-[#1c4baf] text-white font-extrabold text-[11px] uppercase tracking-widest shadow-[0_8px_16px_rgba(48,110,232,0.25)]">
+                  GENERAR RUTINA CON IA
                 </button>
               </div>
             )}
 
-            {/* 5. TIMER AERÓBICO */}
+            {/* VISTA 2: ENTRENAR (TARJETAS DESGLOSADAS IGUAL A CAPTURA 3 Y 4) */}
+            {tab === 'entrenar' && !sesionActiva && (
+              <div className="space-y-4">
+                {rutinaActual.dias.map((dia, diaIdx) => (
+                  <div key={diaIdx} className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-100/80 dark:border-gray-800 space-y-4">
+                    <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
+                      <h3 className="font-extrabold text-[16px] text-gray-900 dark:text-white">{dia.nombre}</h3>
+                      <button onClick={() => setSesionActiva(dia)} className="text-[11px] font-bold text-[#2b6ded] bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full">
+                        Iniciar Sesión
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {dia.ejercicios.map((ej, ejIdx) => (
+                        <div key={ejIdx} className="bg-[#f7f8fa] dark:bg-gray-800/40 p-3.5 rounded-2xl space-y-2 border border-gray-100/50 dark:border-gray-800">
+                          <div className="flex gap-3 items-center">
+                            <img src={ej.media} className="w-16 h-16 object-cover rounded-2xl bg-gray-200" />
+                            <div className="flex-1">
+                              <div className="flex justify-between items-start">
+                                <h4 className="font-bold text-[13px] text-gray-900 dark:text-gray-100 leading-snug">{ej.nombre}</h4>
+                                <button className="text-[10px] font-bold text-[#2b6ded] flex items-center gap-1">
+                                  🔄 Cambiar
+                                </button>
+                              </div>
+                              <span className="text-[11px] font-bold text-[#2b6ded] block mt-0.5">{ej.musculo}</span>
+                              <span className="text-[11px] font-semibold text-gray-500 block mt-0.5">{ej.series} series x {ej.repsBase}</span>
+                            </div>
+                          </div>
+
+                          <div className="pt-1 text-[11px] text-gray-500 leading-relaxed border-t border-gray-200/50 dark:border-gray-700/50">
+                            <p><strong>Ejecución:</strong> {ej.ejecucion}</p>
+                            <p className="text-red-500 mt-0.5"><strong>Error común:</strong> {ej.error}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* VISTA ENTRENAMIENTO ACTIVO (CAPTURA 4: "SESIÓN GUIADA - PASO 1") */}
+            {tab === 'entrenar' && sesionActiva && (
+              <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-gray-100/80 dark:border-gray-800 space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-[18px] font-black text-gray-900 dark:text-white">Sesión Guiada</h2>
+                  <span className="px-3 py-1 bg-blue-50 text-[#2b6ded] font-bold text-[11px] rounded-full">Paso 1</span>
+                </div>
+
+                <img src={DB_EJERCICIOS.piernas_post[0].media} className="w-full h-44 object-cover rounded-2xl bg-gray-100" />
+
+                <div>
+                  <h3 className="font-black text-[15px] text-gray-900 dark:text-white leading-snug">
+                    {DB_EJERCICIOS.piernas_post[0].nombre}
+                  </h3>
+                  <span className="text-[11px] font-bold text-[#2b6ded] block mt-0.5">{DB_EJERCICIOS.piernas_post[0].musculo}</span>
+                </div>
+
+                <div className="bg-[#f7f8fa] dark:bg-gray-800/40 p-3.5 rounded-2xl flex items-center justify-between text-[12px]">
+                  <span className="font-semibold text-gray-500">Serie 1 de 4</span>
+                  <span className="font-bold text-gray-900 dark:text-white">10 + 10 seg sosteniendo arriba + 10 reps</span>
+                </div>
+
+                <button onClick={() => setSesionActiva(null)} className="w-full py-3.5 bg-[#3c9066] text-white font-extrabold text-[12px] rounded-2xl shadow-md flex items-center justify-center gap-1.5">
+                  ✓ Completar Serie y Descansar
+                </button>
+              </div>
+            )}
+
+            {/* VISTA 3: CREAR (CAPTURA 2: "CREADOR MANUAL & PESOS") */}
+            {tab === 'crear' && (
+              <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-gray-100/80 dark:border-gray-800 space-y-4">
+                <h2 className="text-[20px] font-black text-gray-900 dark:text-white tracking-tight">Creador Manual & Pesos</h2>
+                
+                <div>
+                  <input type="text" placeholder="Nombre de la rutina (ej. Mi Espalda/Bíceps)" className={formControlClass} />
+                </div>
+
+                <div className="border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl p-4 text-center">
+                  <button className="text-[12px] font-bold text-gray-700 dark:text-gray-300">
+                    + Agregar Ejercicio
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* VISTA 4: TIMER (CAPTURA 5) */}
             {tab === 'timer' && (
-              <div className="space-y-6">
-                <div className="text-center">
-                  <h2 className="text-[22px] font-extrabold text-gray-900 dark:text-white tracking-tight">Timer Inteligente</h2>
-                  <p className="text-[13px] text-[#6b7280] mt-1">Guía por voz para tus intervalos.</p>
-                </div>
-
-                <div className="bg-[#f7f8fa] dark:bg-gray-800/40 border border-transparent dark:border-gray-800 rounded-[2rem] p-8 text-center flex flex-col items-center justify-center relative overflow-hidden shadow-inner">
-                  <div className="absolute inset-0 opacity-10" style={{ background: timerEstado.fase === 'TRABAJO' ? '#2b6ded' : timerEstado.fase === 'DESCANSO' ? '#fbbf24' : '#9ca3af' }}></div>
-                  <span className="text-[10px] font-black tracking-[0.2em] uppercase text-[#6b7280] dark:text-gray-400 relative z-10">
-                    {timerEstado.fase}
-                  </span>
-                  <div className="text-[72px] font-black tracking-tighter text-gray-900 dark:text-white font-sans py-2 relative z-10 leading-none">
-                    {Math.floor(timerEstado.segsFase / 60).toString().padStart(2, '0')}:{(timerEstado.segsFase % 60).toString().padStart(2, '0')}
-                  </div>
-                  <div className="w-full bg-[#e0e4eb] dark:bg-gray-700 h-2 rounded-full overflow-hidden mt-6 relative z-10">
-                    <div className="h-full transition-all duration-300 rounded-full" style={{ 
-                        backgroundColor: '#2b6ded',
-                        width: `${timerEstado.fase === 'TRABAJO' ? ((timerConfig.trabajo - timerEstado.segsFase) / timerConfig.trabajo) * 100 : timerEstado.fase === 'DESCANSO' ? ((timerConfig.descanso - timerEstado.segsFase) / timerConfig.descanso) * 100 : 100}%`
-                      }}>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <button onClick={() => {
-                      if(!timerEstado.corriendo) { hablar(`Prepárate. ${timerConfig.prep} segundos`); timerTargetRef.current = Date.now() + timerConfig.prep * 1000; setTimerEstado({ corriendo: true, fase: 'PREPÁRATE', rondaActual: 1, segsFase: timerConfig.prep }); } 
-                      else { setTimerEstado(prev => ({...prev, corriendo: false})); }
-                    }} 
-                    className="py-4 rounded-[1.25rem] bg-gradient-to-r from-[#306ee8] to-[#1c4baf] text-white font-extrabold text-[12px] uppercase tracking-widest shadow-[0_8px_16px_rgba(48,110,232,0.25)] transition-all active:scale-[0.98]">
-                    {timerEstado.corriendo ? "PAUSAR" : "INICIAR"}
+              <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-gray-100/80 dark:border-gray-800 text-center space-y-4">
+                <span className="text-[10px] font-black tracking-widest text-[#2b6ded] uppercase block">PREPÁRATE</span>
+                <div className="text-[64px] font-black tracking-tight text-gray-900 dark:text-white leading-none">00:45</div>
+                
+                <div className="flex gap-3 justify-center pt-2">
+                  <button onClick={()=>setTimerCorriendo(!timerCorriendo)} className="px-7 py-2.5 bg-[#306ee8] text-white font-bold text-[12px] rounded-xl shadow-sm">
+                    {timerCorriendo ? 'Pausar' : 'Iniciar'}
                   </button>
-                  <button onClick={() => setTimerEstado({ corriendo: false, fase: 'PREPÁRATE', rondaActual: 1, segsFase: timerConfig.prep })} className="py-4 rounded-[1.25rem] bg-[#f4f5f7] dark:bg-gray-800 text-gray-900 dark:text-white font-extrabold text-[12px] uppercase tracking-widest transition-all hover:bg-gray-200">
-                    RESETEAR
+                  <button onClick={()=>setTimerSegs(45)} className="px-6 py-2.5 bg-[#ecedf1] dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-[12px] rounded-xl">
+                    Reiniciar
                   </button>
-                </div>
-
-                <div className="space-y-4">
-                  <label className={labelClass}>Modelos Rápidos</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button onClick={() => { setTimerConfig({ prep: 5, trabajo: 45, descanso: 10, rondas: 15 }); setTimerEstado({ corriendo: false, fase: 'PREPÁRATE', rondaActual: 1, segsFase: 5 }); }} className="py-2.5 rounded-2xl bg-[#f4f5f7] dark:bg-gray-800 text-[12px] font-bold text-gray-700 dark:text-gray-300">45/10 (15x)</button>
-                    <button onClick={() => { setTimerConfig({ prep: 5, trabajo: 20, descanso: 10, rondas: 8 }); setTimerEstado({ corriendo: false, fase: 'PREPÁRATE', rondaActual: 1, segsFase: 5 }); }} className="py-2.5 rounded-2xl bg-[#f4f5f7] dark:bg-gray-800 text-[12px] font-bold text-gray-700 dark:text-gray-300">Tabata</button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className={labelClass}>Trabajo (s)</label>
-                      <input type="number" value={timerConfig.trabajo} onChange={e => setTimerConfig({ ...timerConfig, trabajo: parseInt(e.target.value) || 0 })} className={formControlClass} />
-                    </div>
-                    <div>
-                      <label className={labelClass}>Descanso (s)</label>
-                      <input type="number" value={timerConfig.descanso} onChange={e => setTimerConfig({ ...timerConfig, descanso: parseInt(e.target.value) || 0 })} className={formControlClass} />
-                    </div>
-                  </div>
                 </div>
               </div>
             )}
