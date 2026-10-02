@@ -25,90 +25,119 @@
     body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
     input[type="number"]::-webkit-inner-spin-button, 
     input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-[#f7f8fa] dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen pb-10">
+<body class="bg-[#f7f8fa] dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen pb-16">
   <div id="root"></div>
 
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    const motorIA_GenerarRutina = (datos) => {
-      const { objetivo, dias, lesiones, nivel, duracion } = datos;
-      const numDias = parseInt(dias) || 3;
+    // --- BASE DE DATOS DE EJERCICIOS CON MEDIA / ÍCONOS Y BANDERAS AXIALES ---
+    const DB_EJERCICIOS = {
+      pecho: [
+        { id: 'press_banca', nombre: "Press de Banca Plano", musculo: "Pecho", icono: "🦾", axial: false, media: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&auto=format&fit=crop&q=80", ejecucion: "Mantén el torso estable y controla la fase descendente.", error: "Perder la postura o acelerar demasiado." },
+        { id: 'press_inc_manc', nombre: "Press Inclinado con Mancuernas", musculo: "Pecho", icono: "🦾", axial: false, media: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&auto=format&fit=crop&q=80", ejecucion: "Baja de forma controlada abriendo los codos a 45 grados.", error: "Rebotar el peso en el pecho." },
+        { id: 'aperturas_polea', nombre: "Aperturas en Polea", musculo: "Pecho", icono: "🦅", axial: false, media: "", ejecucion: "Junta las manos al centro contrayendo el pectoral.", error: "Flexionar demasiado los codos." }
+      ],
+      espalda: [
+        { id: 'jalon_pecho', nombre: "Jalón al Pecho", musculo: "Espalda", icono: "🦇", axial: false, media: "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=400&auto=format&fit=crop&q=80", ejecucion: "Lleva la barra hacia el pecho retraendo las escápulas.", error: "Balancear el torso hacia atrás." },
+        { id: 'remo_mancuerna', nombre: "Remo con Mancuerna", musculo: "Espalda", icono: "🚣", axial: false, media: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&auto=format&fit=crop&q=80", ejecucion: "Tracciona llevando el codo hacia la cadera manteniendo la espalda recta.", error: "Rotar en exceso el torso." },
+        { id: 'remo_barra', nombre: "Remo con Barra", musculo: "Espalda", icono: "🚣", axial: true, media: "", ejecucion: "Inclina el torso a 45 grados y lleva la barra al abdomen.", error: "Redondear la zona lumbar." }
+      ],
+      piernas_cuad: [
+        { id: 'prensa', nombre: "Prensa de Piernas", musculo: "Cuádriceps", icono: "🦵", axial: false, media: "https://images.unsplash.com/photo-1534367507873-d2d7e24c797f?w=400&auto=format&fit=crop&q=80", ejecucion: "Empuja con toda la planta del pie sin bloquear rodillas.", error: "Despegar la cadera del respaldo." },
+        { id: 'sentadilla_barra', nombre: "Sentadilla con Barra", musculo: "Piernas", icono: "🦵", axial: true, media: "", ejecucion: "Baja rompiendo el paralelo manteniendo el pecho erguido.", error: "Colapsar las rodillas hacia adentro." },
+        { id: 'ext_cuad', nombre: "Extensión de Cuádriceps", musculo: "Cuádriceps", icono: "🦵", axial: false, media: "", ejecucion: "Extiende las piernas con pausa de 1 segundo arriba.", error: "Usar impulso exagerado." }
+      ],
+      piernas_post: [
+        { id: 'hip_thrust', nombre: "Empuje de Cadera (Hip Thrust)", musculo: "Glúteos", icono: "🍑", axial: false, media: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&auto=format&fit=crop&q=80", ejecucion: "Empuja con los talones y aprieta glúteos arriba.", error: "Arquear la zona lumbar." },
+        { id: 'peso_muerto_rumano', nombre: "Peso Muerto Rumano", musculo: "Femorales", icono: "🍑", axial: true, media: "", ejecucion: "Lleva la cadera hacia atrás manteniendo las piernas casi rectas.", error: "Flexionar la espalda al bajar." },
+        { id: 'curl_femoral', nombre: "Curl Femoral", musculo: "Femorales", icono: "🦵", axial: false, media: "", ejecucion: "Flexiona las rodillas llevando el rodillo a los glúteos.", error: "Levantar la cadera del banco." }
+      ],
+      hombros: [
+        { id: 'press_militar', nombre: "Press Militar con Mancuernas", musculo: "Hombros", icono: "🏋️", axial: false, media: "", ejecucion: "Empuja verticalmente sobre la cabeza sin arquear la espalda.", error: "Bajar en exceso los codos." },
+        { id: 'elev_laterales', nombre: "Elevaciones Laterales", musculo: "Hombros", icono: "🦅", axial: false, media: "", ejecucion: "Lleva las mancuernas hacia los lados hasta la altura del hombro.", error: "Encoger los trapecios." }
+      ],
+      brazos: [
+        { id: 'curl_biceps', nombre: "Curl de Bíceps", musculo: "Brazos", icono: "💪", axial: false, media: "", ejecucion: "Flexiona los codos manteniendo los brazos pegados al cuerpo.", error: "Mover los codos hacia adelante." },
+        { id: 'ext_triceps', nombre: "Extensión de Tríceps", musculo: "Brazos", icono: "💪", axial: false, media: "", ejecucion: "Extiende los codos hacia abajo congelando el brazo.", error: "Abrir los codos demasiado." }
+      ]
+    };
 
-      const baseEjercicios = {
-        pecho: ["Press de Banca Plano", "Press Inclinado", "Aperturas en Polea"],
-        espalda: ["Jalón al Pecho", "Remo Horizontal", "Remo Unilateral"],
-        piernas: lesiones.includes("Espalda baja") 
-          ? ["Prensa de Piernas", "Hip Thrust", "Extensión de Cuádriceps", "Curl Femoral"]
-          : ["Sentadilla con Barra", "Peso Muerto", "Hip Thrust", "Zancadas"],
-        hombros: ["Press Militar", "Elevaciones Laterales", "Pájaro"],
-        brazos: ["Curl de Bíceps", "Extensión de Tríceps", "Curl Martillo"]
-      };
-
-      const plantillasPorDias = [
-        { nombre: "Día 1: Torso", grupos: ['pecho', 'espalda', 'hombros'] },
-        { nombre: "Día 2: Piernas & Glúteos", grupos: ['piernas'] },
-        { nombre: "Día 3: Fullbody", grupos: ['pecho', 'espalda', 'brazos'] },
-        { nombre: "Día 4: Hombro & Brazo", grupos: ['hombros', 'brazos'] },
-        { nombre: "Día 5: Cadena Posterior", grupos: ['piernas'] }
-      ];
-
-      const diasGenerados = plantillasPorDias.slice(0, numDias).map(p => {
-        let ejs = [];
-        p.grupos.forEach(grupo => {
-          baseEjercicios[grupo].forEach(nombreEj => {
-            ejs.push({
-              nombre: nombreEj,
-              series: nivel === 'Avanzado' ? 4 : 3,
-              repsBase: objetivo === 'Fuerza' ? '6-8' : '10-12'
-            });
-          });
-        });
-        return {
-          nombre: p.nombre,
-          ejercicios: ejs.slice(0, duracion === '45 min' ? 4 : 6)
-        };
-      });
-
-      return { usuario: datos.nombre, objetivo: datos.objetivo, nivel: datos.nivel, dias: diasGenerados };
+    // --- FORMATEADOR ÚNICO DE TEXTO PARA EVITAR DUPLICACIONES DE REPETICIONES ---
+    const formatearEjercicio = (series, reps, descanso, nota) => {
+      let texto = `${series} series × ${reps} reps`;
+      if (nota) texto += ` (${nota})`;
+      if (descanso) texto += ` [${descanso}s desc]`;
+      return texto;
     };
 
     function App() {
       const [tab, setTab] = useState('generar');
-      const [darkMode, setDarkMode] = useState(false);
+      const [darkMode, setDarkMode] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('fitai_dark')) || false; } catch(e) { return false; }
+      });
+      
+      const [rutinaActual, setRutinaActual] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('fitai_rutina')) || null; } catch(e) { return null; }
+      });
+
+      const [historial, setHistorial] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('fitai_historial')) || []; } catch(e) { return []; }
+      });
+
+      const [ajusteVolumen, setAjusteVolumen] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('fitai_volumen')) || 0; } catch(e) { return 0; }
+      });
 
       useEffect(() => {
-        if (darkMode) document.documentElement.classList.add('dark');
-        else document.documentElement.classList.remove('dark');
+        try {
+          localStorage.setItem('fitai_dark', JSON.stringify(darkMode));
+          if (darkMode) document.documentElement.classList.add('dark');
+          else document.documentElement.classList.remove('dark');
+        } catch(e){}
       }, [darkMode]);
 
-      // FORMULARIO IA
+      useEffect(() => {
+        try { localStorage.setItem('fitai_rutina', JSON.stringify(rutinaActual)); } catch(e){}
+      }, [rutinaActual]);
+
+      useEffect(() => {
+        try { localStorage.setItem('fitai_historial', JSON.stringify(historial)); } catch(e){}
+      }, [historial]);
+
+      useEffect(() => {
+        try { localStorage.setItem('fitai_volumen', JSON.stringify(ajusteVolumen)); } catch(e){}
+      }, [ajusteVolumen]);
+
+      // ESTADO DEL FORMULARIO DE IA
       const [formData, setFormData] = useState({
         nombre: 'Alan', genero: 'Hombre', edad: '24', estatura: '170',
         objetivo: 'Ganar músculo', dias: '3 días', equipo: 'Gimnasio completo',
         duracion: '60 min', lesiones: 'Espalda baja (Evitar cargas axiales)', nivel: 'Intermedio'
       });
       const [loading, setLoading] = useState(false);
-      const [rutinaActual, setRutinaActual] = useState(() => {
-        try { const saved = localStorage.getItem('fitai_rutina'); return saved ? JSON.parse(saved) : null; } 
-        catch(e) { return null; }
-      });
 
-      useEffect(() => {
-        if (rutinaActual) localStorage.setItem('fitai_rutina', JSON.stringify(rutinaActual));
-      }, [rutinaActual]);
-
-      // FORMULARIO CREADOR MANUAL
+      // ESTADO CREADOR MANUAL
       const [rutinaNueva, setRutinaNueva] = useState({
-        titulo: 'Mi Rutina',
-        dias: [{ nombre: 'Día 1: Entrenamiento', ejercicios: [] }]
+        titulo: 'Mi Rutina Personalizada',
+        dias: [{ nombre: 'Día 1: Mi Entrenamiento', ejercicios: [] }]
       });
       const [diaSel, setDiaSel] = useState(0);
       const [nuevoEjNombre, setNuevoEjNombre] = useState('');
       const [nuevoEjSeries, setNuevoEjSeries] = useState(3);
-      const [nuevoEjReps, setNuevoEjReps] = useState('10');
+      const [nuevoEjReps, setNuevoEjReps] = useState('10-12');
+      const [nuevoEjDescanso, setNuevoEjDescanso] = useState(60);
+
+      // ESTADO ENTRENAMIENTO GUIADO Y PROGRESIÓN
+      const [sesionActiva, setSesionActiva] = useState(null);
+      const [ejercicioActualIdx, setEjercicioActualIdx] = useState(0);
+      const [setsData, setSetsData] = useState([]);
+      const [sugerenciaIA, setSugerenciaIA] = useState('');
+      const [mostrarFeedback, setMostrarFeedback] = useState(false);
 
       // ESTADO TIMER
       const [timerConfig, setTimerConfig] = useState({ prep: 5, trabajo: 45, descanso: 10, rondas: 15 });
@@ -117,13 +146,161 @@
 
       const hablar = (texto) => {
         if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const ut = new SpeechSynthesisUtterance(texto);
-          ut.lang = 'es-ES';
-          window.speechSynthesis.speak(ut);
+          try {
+            window.speechSynthesis.cancel();
+            const ut = new SpeechSynthesisUtterance(texto);
+            ut.lang = 'es-ES';
+            window.speechSynthesis.speak(ut);
+          } catch(e){}
         }
       };
 
+      // --- GENERADOR IA ---
+      const handleGenerarRutina = (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setTimeout(() => {
+          const numDias = parseInt(formData.dias) || 3;
+          const evitaAxial = formData.lesiones.includes('Espalda baja');
+          const esHombre = formData.genero === 'Hombre';
+          let seriesBase = (formData.nivel === 'Avanzado' ? 4 : 3) + ajusteVolumen;
+          if (seriesBase < 2) seriesBase = 2;
+
+          const filtrar = (arr) => arr.filter(ej => !(evitaAxial && ej.axial));
+          const dbSegura = {
+            pecho: filtrar(DB_EJERCICIOS.pecho),
+            espalda: filtrar(DB_EJERCICIOS.espalda),
+            piernas_cuad: filtrar(DB_EJERCICIOS.piernas_cuad),
+            piernas_post: filtrar(DB_EJERCICIOS.piernas_post),
+            hombros: filtrar(DB_EJERCICIOS.hombros),
+            brazos: filtrar(DB_EJERCICIOS.brazos)
+          };
+
+          let plantillas = [];
+          if (numDias === 3) {
+            plantillas = esHombre 
+              ? [ { n: "Día 1: Pecho, Hombro y Tríceps", g: ['pecho', 'hombros', 'brazos'] },
+                  { n: "Día 2: Piernas Completas", g: ['piernas_cuad', 'piernas_post'] },
+                  { n: "Día 3: Espalda y Bíceps", g: ['espalda', 'brazos'] } ]
+              : [ { n: "Día 1: Glúteos y Femorales", g: ['piernas_post', 'piernas_cuad'] },
+                  { n: "Día 2: Torso y Brazos", g: ['pecho', 'espalda', 'hombros'] },
+                  { n: "Día 3: Piernas y Glúteos Focus", g: ['piernas_cuad', 'piernas_post', 'brazos'] } ];
+          } else {
+            plantillas = [
+              { n: "Día 1: Torso Completo", g: ['pecho', 'espalda', 'hombros'] },
+              { n: "Día 2: Pierna y Glúteo", g: ['piernas_cuad', 'piernas_post'] },
+              { n: "Día 3: Empuje (Pecho/Hombro/Tríceps)", g: ['pecho', 'hombros', 'brazos'] },
+              { n: "Día 4: Tracción (Espalda/Bíceps)", g: ['espalda', 'brazos'] }
+            ];
+          }
+
+          const diasGenerados = plantillas.slice(0, numDias).map(p => {
+            let ejs = [];
+            p.g.forEach(grupo => {
+              const lista = dbSegura[grupo];
+              if (lista && lista.length > 0) {
+                const item = lista[0];
+                ejs.push({
+                  id: item.id,
+                  nombre: item.nombre,
+                  musculo: item.musculo,
+                  icono: item.icono,
+                  media: item.media,
+                  series: seriesBase,
+                  repsBase: formData.objetivo === 'Fuerza' ? '5-8' : '10-12',
+                  descanso: 60,
+                  ejecucion: item.ejecucion,
+                  error: item.error
+                });
+              }
+            });
+            return { nombre: p.n, ejercicios: ejs };
+          });
+
+          setRutinaActual({ usuario: formData.nombre, objetivo: formData.objetivo, nivel: formData.nivel, dias: diasGenerados });
+          setLoading(false);
+          setTab('entrenar');
+        }, 800);
+      };
+
+      // --- LOGICA DE PROGRESIÓN AUTOMÁTICA ---
+      const analizarProgresion = (ejNombre) => {
+        const registros = historial.flatMap(s => s.ejercicios || []).filter(e => e && e.nombre === ejNombre);
+        if (registros.length < 2) return null;
+
+        const r1 = registros[0];
+        const r2 = registros[1];
+
+        const pesoMax1 = Math.max(...(r1.sets || []).map(s => parseFloat(s.peso) || 0));
+        const pesoMax2 = Math.max(...(r2.sets || []).map(s => parseFloat(s.peso) || 0));
+
+        if (pesoMax1 > 0 && pesoMax1 >= pesoMax2) {
+          return `¡Llevas 2 sesiones dominando este peso! Te sugerimos aumentar un 5% la carga (${(pesoMax1 * 1.05).toFixed(1)} kg) o sumar 1 repetición más.`;
+        }
+        return `Mantén la carga actual para afianzar la técnica.`;
+      };
+
+      // --- TRACKER GUIADO EN ENTRENAR ---
+      const iniciarSesionGuiada = (dia) => {
+        const sesion = { fecha: new Date().toISOString(), nombreDia: dia.nombre, ejercicios: dia.ejercicios, data: [] };
+        setSesionActiva(sesion);
+        setEjercicioActualIdx(0);
+        prepararEjercicio(0, dia.ejercicios);
+      };
+
+      const prepararEjercicio = (idx, ejercicios) => {
+        const ej = ejercicios[idx];
+        const prevSets = Array.from({ length: ej.series }, () => ({ peso: '', reps: '' }));
+        
+        // Cargar peso previo si existe
+        const ultimoHist = historial.flatMap(s => s.ejercicios || []).find(e => e && e.nombre === ej.nombre);
+        if (ultimoHist && ultimoHist.sets && ultimoHist.sets[0] && ultimoHist.sets[0].peso) {
+          prevSets.forEach(s => s.peso = ultimoHist.sets[0].peso);
+        }
+
+        setSetsData(prevSets);
+        setSugerenciaIA(analizarProgresion(ej.nombre));
+      };
+
+      const cambiarEjercicioTrack = (dir) => {
+        let newData = [...(sesionActiva.data || [])];
+        newData[ejercicioActualIdx] = setsData;
+        setSesionActiva(prev => ({ ...prev, data: newData }));
+
+        const nextIdx = ejercicioActualIdx + dir;
+        if (nextIdx >= 0 && nextIdx < sesionActiva.ejercicios.length) {
+          setEjercicioActualIdx(nextIdx);
+          prepararEjercicio(nextIdx, sesionActiva.ejercicios);
+        }
+      };
+
+      const finalizarSesionGuiada = () => {
+        let newData = [...(sesionActiva.data || [])];
+        newData[ejercicioActualIdx] = setsData;
+
+        const guardado = {
+          fecha: sesionActiva.fecha,
+          nombreDia: sesionActiva.nombreDia,
+          ejercicios: sesionActiva.ejercicios.map((ej, i) => ({
+            nombre: ej.nombre,
+            sets: newData[i] || []
+          }))
+        };
+
+        setHistorial([guardado, ...historial]);
+        setSesionActiva(null);
+        if (historial.length % 3 === 0) setMostrarFeedback(true);
+        else setTab('progreso');
+      };
+
+      const handleFeedbackSemanal = (res) => {
+        if (res === 'cansado' || res === 'dolor') setAjusteVolumen(prev => prev - 1);
+        if (res === 'facil') setAjusteVolumen(prev => prev + 1);
+        setMostrarFeedback(false);
+        setTab('progreso');
+      };
+
+      // --- TIMER BUCLE ---
       useEffect(() => {
         let interval = null;
         if (timerEstado.corriendo) {
@@ -184,15 +361,15 @@
             </button>
           </header>
 
-          {/* TABS (Navegación tipo Pill Unificado) */}
-          <nav className="bg-[#ecedf1] dark:bg-gray-800/60 p-1.5 rounded-full flex justify-between text-[13px] font-semibold">
-            {['Generar', 'Entrenar', 'Crear', 'Timer'].map(t => (
+          {/* TABS NAVEGACIÓN UNIFICADA */}
+          <nav className="bg-[#ecedf1] dark:bg-gray-800/60 p-1.5 rounded-full flex justify-between text-[12px] font-semibold">
+            {['Generar', 'Entrenar', 'Progreso', 'Crear', 'Timer'].map(t => (
               <button 
                 key={t}
                 onClick={() => setTab(t.toLowerCase())}
                 className={`flex-1 py-2.5 rounded-full transition-all ${
                   tab === t.toLowerCase() 
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]' 
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] font-bold' 
                     : 'text-[#6b7280] dark:text-gray-400 hover:text-gray-900'
                 }`}
               >
@@ -202,11 +379,11 @@
           </nav>
 
           {/* CONTENEDOR PRINCIPAL */}
-          <main className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-none border border-gray-100 dark:border-gray-800 space-y-6">
+          <main className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-none border border-gray-100 dark:border-gray-800 space-y-6 relative min-h-[350px]">
             
             {/* 1. GENERAR CON IA */}
             {tab === 'generar' && (
-              <form onSubmit={e => { e.preventDefault(); setLoading(true); setTimeout(() => { setRutinaActual(motorIA_GenerarRutina(formData)); setLoading(false); setTab('entrenar'); }, 800); }} className="space-y-5">
+              <form onSubmit={handleGenerarRutina} className="space-y-5">
                 <div className="mb-2">
                   <h2 className="text-[22px] font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight">Diseña tu Rutina Inteligente</h2>
                   <p className="text-[13px] text-[#6b7280] mt-1.5 leading-relaxed">Personalización avanzada adaptada a tu cuerpo y equipo.</p>
@@ -297,8 +474,8 @@
               </form>
             )}
 
-            {/* 2. ENTRENAR */}
-            {tab === 'entrenar' && (
+            {/* 2. ENTRENAR (VISTA NORMAL / SESIÓN GUIADA) */}
+            {tab === 'entrenar' && !sesionActiva && (
               <div className="space-y-5">
                 {!rutinaActual ? (
                   <div className="text-center py-12 text-[#6b7280] text-[13px]">Sin rutina activa. Genera o crea una nueva.</div>
@@ -316,12 +493,33 @@
 
                     {rutinaActual.dias.map((dia, diaIdx) => (
                       <div key={diaIdx} className="bg-[#f7f8fa] dark:bg-gray-800/40 p-4 rounded-[1.5rem] space-y-3 border border-transparent dark:border-gray-800">
-                        <h4 className="font-black text-[13px] text-gray-900 dark:text-gray-100 ml-1">{dia.nombre}</h4>
-                        <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-black text-[13px] text-gray-900 dark:text-gray-100 ml-1">{dia.nombre}</h4>
+                          <button onClick={() => iniciarSesionGuiada(dia)} className="px-3.5 py-1.5 bg-[#2b6ded] text-white text-[11px] font-bold rounded-full uppercase shadow-sm">
+                            Iniciar
+                          </button>
+                        </div>
+                        <div className="space-y-3">
                           {dia.ejercicios.map((ej, ejIdx) => (
-                            <div key={ejIdx} className="bg-white dark:bg-gray-900 p-3.5 rounded-2xl text-[13px] flex justify-between items-center shadow-[0_2px_8px_rgba(0,0,0,0.02)] border border-gray-50 dark:border-gray-800">
-                              <span className="font-semibold text-gray-800 dark:text-gray-200">{ej.nombre}</span>
-                              <span className="text-gray-400 text-[11px] font-medium">{ej.series} × {ej.repsBase}</span>
+                            <div key={ejIdx} className="bg-white dark:bg-gray-900 p-3.5 rounded-2xl text-[13px] space-y-2 shadow-[0_2px_8px_rgba(0,0,0,0.02)] border border-gray-50 dark:border-gray-800">
+                              <div className="flex gap-3 items-center">
+                                {ej.media ? (
+                                  <img src={ej.media} className="w-14 h-14 object-cover rounded-xl bg-gray-100" />
+                                ) : (
+                                  <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center text-2xl">{ej.icono || '🏋️'}</div>
+                                )}
+                                <div className="flex-1">
+                                  <span className="font-bold text-gray-800 dark:text-gray-100 block">{ej.nombre}</span>
+                                  <span className="text-gray-400 text-[11px] font-medium block">
+                                    {formatearEjercicio(ej.series, ej.repsBase, ej.descanso, null)}
+                                  </span>
+                                </div>
+                              </div>
+                              {ej.ejecucion && (
+                                <p className="text-[11px] text-gray-500 bg-[#f7f8fa] dark:bg-gray-800/50 p-2.5 rounded-xl leading-relaxed">
+                                  <strong>Ejecución:</strong> {ej.ejecucion}
+                                </p>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -332,24 +530,132 @@
               </div>
             )}
 
-            {/* 3. CREAR MANUAL */}
+            {/* SESIÓN GUIADA ACTIVA EN ENTRENAR */}
+            {tab === 'entrenar' && sesionActiva && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  <span>{sesionActiva.nombreDia}</span>
+                  <span className="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">Paso {ejercicioActualIdx + 1} de {sesionActiva.ejercicios.length}</span>
+                </div>
+
+                <div className="bg-[#f7f8fa] dark:bg-gray-800/60 p-5 rounded-[2rem] text-center space-y-2 border border-gray-100 dark:border-gray-800">
+                  {sesionActiva.ejercicios[ejercicioActualIdx].media ? (
+                    <img src={sesionActiva.ejercicios[ejercicioActualIdx].media} className="w-full h-40 object-cover rounded-2xl mb-2" />
+                  ) : (
+                    <div className="text-4xl py-2">{sesionActiva.ejercicios[ejercicioActualIdx].icono || '🏋️'}</div>
+                  )}
+                  <h3 className="text-lg font-black text-gray-900 dark:text-white">{sesionActiva.ejercicios[ejercicioActualIdx].nombre}</h3>
+                  <p className="text-[12px] text-blue-600 font-bold">
+                    {formatearEjercicio(sesionActiva.ejercicios[ejercicioActualIdx].series, sesionActiva.ejercicios[ejercicioActualIdx].repsBase, null, null)}
+                  </p>
+                </div>
+
+                {sugerenciaIA && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 p-3 rounded-2xl text-[11px] flex items-start gap-2 border border-blue-100 dark:border-blue-800">
+                    <span className="text-base">🤖</span>
+                    <p className="leading-tight"><strong>Sugerencia IA:</strong> {sugerenciaIA}</p>
+                  </div>
+                )}
+
+                <div className="space-y-2 pt-1">
+                  <div className="grid grid-cols-3 text-center text-[10px] font-extrabold text-gray-400 uppercase">
+                    <span>Serie</span><span>Kg</span><span>Reps</span>
+                  </div>
+                  {setsData.map((s, sIdx) => (
+                    <div key={sIdx} className="grid grid-cols-3 gap-2 items-center">
+                      <span className="text-center font-bold text-xs">Serie {sIdx + 1}</span>
+                      <input type="number" placeholder="Kg" value={s.peso} onChange={e => { const n = [...setsData]; n[sIdx].peso = e.target.value; setSetsData(n); }} className={formControlClass + " text-center py-2 text-xs"} />
+                      <input type="number" placeholder="Reps" value={s.reps} onChange={e => { const n = [...setsData]; n[sIdx].reps = e.target.value; setSetsData(n); }} className={formControlClass + " text-center py-2 text-xs"} />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 pt-3">
+                  {ejercicioActualIdx > 0 && (
+                    <button onClick={() => cambiarEjercicioTrack(-1)} className="px-4 py-3 bg-gray-100 dark:bg-gray-800 font-bold text-xs rounded-2xl">Anterior</button>
+                  )}
+                  {ejercicioActualIdx < sesionActiva.ejercicios.length - 1 ? (
+                    <button onClick={() => cambiarEjercicioTrack(1)} className="flex-1 py-3.5 bg-[#2b6ded] text-white font-bold text-xs rounded-2xl uppercase tracking-wider">Siguiente Ejercicio</button>
+                  ) : (
+                    <button onClick={finalizarSesionGuiada} className="flex-1 py-3.5 bg-green-600 text-white font-bold text-xs rounded-2xl uppercase tracking-wider">Finalizar Sesión</button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* MODAL FEEDBACK SEMANAL */}
+            {mostrarFeedback && (
+              <div className="absolute inset-0 bg-white/95 dark:bg-gray-900/95 z-50 rounded-[2rem] p-6 flex flex-col justify-center items-center text-center space-y-4">
+                <span className="text-4xl">📊</span>
+                <h3 className="text-lg font-black">Ajuste de Volumen Semanal</h3>
+                <p className="text-xs text-gray-500">¿Cómo te sentiste con la cantidad de esfuerzo acumulada estas semanas?</p>
+                <div className="w-full space-y-2">
+                  <button onClick={() => handleFeedbackSemanal('facil')} className="w-full py-3 bg-[#f4f5f7] dark:bg-gray-800 text-xs font-bold rounded-xl">Con ganas de más (Aumentar series)</button>
+                  <button onClick={() => handleFeedbackSemanal('normal')} className="w-full py-3 bg-green-100 text-green-800 text-xs font-bold rounded-xl">Muy bien / Normal (Mantener)</button>
+                  <button onClick={() => handleFeedbackSemanal('cansado')} className="w-full py-3 bg-orange-100 text-orange-800 text-xs font-bold rounded-xl">Muy cansado (Bajar volumen)</button>
+                  <button onClick={() => handleFeedbackSemanal('dolor')} className="w-full py-3 bg-red-100 text-red-800 text-xs font-bold rounded-xl">Con dolor articular (Descarga)</button>
+                </div>
+              </div>
+            )}
+
+            {/* 3. PROGRESO */}
+            {tab === 'progreso' && (
+              <div className="space-y-5">
+                <div>
+                  <h2 className="text-[22px] font-extrabold text-gray-900 dark:text-white tracking-tight">Tu Progreso</h2>
+                  <p className="text-[13px] text-[#6b7280] mt-1">Registros y métricas de tus entrenamientos.</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-[#f7f8fa] dark:bg-gray-800/40 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                    <span className="text-[10px] font-extrabold text-gray-400 uppercase">Sesiones Totales</span>
+                    <p className="text-2xl font-black text-gray-900 dark:text-white mt-1">{historial.length}</p>
+                  </div>
+                  <div className="bg-[#f7f8fa] dark:bg-gray-800/40 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                    <span className="text-[10px] font-extrabold text-gray-400 uppercase">Modificador Series</span>
+                    <p className="text-2xl font-black text-gray-900 dark:text-white mt-1">{ajusteVolumen >= 0 ? `+${ajusteVolumen}` : ajusteVolumen}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <h3 className="text-xs font-extrabold uppercase text-gray-400 tracking-wider">Historial Reciente</h3>
+                  {historial.length === 0 ? (
+                    <p className="text-xs text-gray-400 italic">Completa entrenamientos en la pestaña "Entrenar" para ver tu historial aquí.</p>
+                  ) : (
+                    historial.slice(0, 5).map((h, idx) => (
+                      <div key={idx} className="p-4 bg-[#f7f8fa] dark:bg-gray-800/40 rounded-2xl space-y-1 border border-gray-100 dark:border-gray-800">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-xs">{h.nombreDia}</span>
+                          <span className="text-[10px] text-gray-400">{new Date(h.fecha).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-[11px] text-gray-500 truncate">
+                          {(h.ejercicios || []).map(e => e.nombre).join(' • ')}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 4. CREAR MANUAL */}
             {tab === 'crear' && (
               <div className="space-y-5">
                 <div>
-                  <h2 className="text-[22px] font-extrabold text-gray-900 dark:text-white tracking-tight">Creador Manual</h2>
+                  <h2 className="text-[22px] font-extrabold text-gray-900 dark:text-white tracking-tight">Creador Manual & Pesos</h2>
                   <p className="text-[13px] text-[#6b7280] mt-1.5">Diseña tu plan personalizado bloque por bloque.</p>
                 </div>
 
                 <div>
                   <label className={labelClass}>Nombre de la Rutina</label>
-                  <input type="text" value={rutinaNueva.titulo} onChange={e => setRutinaNueva({ ...rutinaNueva, titulo: e.target.value })} className={formControlClass} />
+                  <input type="text" value={rutinaNueva.titulo} onChange={e => setRutinaNueva({ ...rutinaNueva, titulo: e.target.value })} className={formControlClass} placeholder="ej. Mi Espalda/Bíceps" />
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <label className={labelClass}>Días de Entrenamiento</label>
                     <button onClick={() => setRutinaNueva(p => ({ ...p, dias: [...p.dias, { nombre: `Día ${p.dias.length + 1}`, ejercicios: [] }] }))} className="text-[11px] font-bold text-[#2b6ded] bg-[#f4f5f7] dark:bg-gray-800 px-3 py-1 rounded-full">
-                      + Añadir
+                      + Añadir Día
                     </button>
                   </div>
                   <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -368,7 +674,7 @@
                     <input type="number" placeholder="Series" value={nuevoEjSeries} onChange={e => setNuevoEjSeries(e.target.value)} className={formControlClass} />
                     <input type="text" placeholder="Repeticiones" value={nuevoEjReps} onChange={e => setNuevoEjReps(e.target.value)} className={formControlClass} />
                   </div>
-                  <button onClick={() => { if (!nuevoEjNombre) return; const c = [...rutinaNueva.dias]; c[diaSel].ejercicios.push({ nombre: nuevoEjNombre, series: nuevoEjSeries, repsBase: nuevoEjReps }); setRutinaNueva({ ...rutinaNueva, dias: c }); setNuevoEjNombre(''); }} className="w-full py-3 bg-[#e0e4eb] dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-bold rounded-2xl text-[12px] transition-all hover:bg-gray-200">
+                  <button onClick={() => { if (!nuevoEjNombre) return; const c = [...rutinaNueva.dias]; c[diaSel].ejercicios.push({ nombre: nuevoEjNombre, series: nuevoEjSeries, repsBase: nuevoEjReps, descanso: nuevoEjDescanso }); setRutinaNueva({ ...rutinaNueva, dias: c }); setNuevoEjNombre(''); }} className="w-full py-3 bg-[#e0e4eb] dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-bold rounded-2xl text-[12px] transition-all hover:bg-gray-200">
                     + Agregar Ejercicio
                   </button>
                 </div>
@@ -388,7 +694,7 @@
               </div>
             )}
 
-            {/* 4. TIMER AERÓBICO */}
+            {/* 5. TIMER AERÓBICO */}
             {tab === 'timer' && (
               <div className="space-y-6">
                 <div className="text-center">
