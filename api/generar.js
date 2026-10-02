@@ -1,32 +1,29 @@
 import { createClient } from '@supabase/supabase-js';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Inicializar Supabase y OpenAI con las variables de entorno de Vercel
+// Inicializar Supabase
 const supabase = createClient(
     process.env.SUPABASE_URL, 
     process.env.SUPABASE_ANON_KEY
 );
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+// Inicializar Google GenAI (asegúrate de tener GEMINI_API_KEY en las variables de Vercel)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export default async function handler(req, res) {
-    // Permitir solo peticiones POST
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Método no permitido' });
     }
 
     try {
         const { nivel_usuario, dias_disponibles } = req.body;
-        // ej: nivel_usuario = 'intermedio', dias_disponibles = 4
 
-        // 1. Definir qué niveles de ejercicios traer de Supabase según el usuario
+        // 1. Filtrar niveles permitidos
         const nivelesPermitidos = nivel_usuario === 'basico' ? ['basico'] :
                                   nivel_usuario === 'intermedio' ? ['basico', 'intermedio'] : 
                                   ['basico', 'intermedio', 'avanzado'];
 
-        // 2. Consultar el catálogo seguro en Supabase
+        // 2. Consultar Supabase
         const { data: ejerciciosDisponibles, error: dbError } = await supabase
             .from('ejercicios')
             .select('*')
@@ -34,11 +31,21 @@ export default async function handler(req, res) {
 
         if (dbError) throw dbError;
 
-        // 3. Crear los prompts para OpenAI
-        const systemPrompt = `
-        Eres un entrenador personal experto. Tu objetivo es armar una rutina de entrenamiento enfocada en la sobrecarga progresiva y el rendimiento real.
-        DEBES seleccionar los ejercicios ÚNICAMENTE de la lista JSON provista. No inventes ejercicios nuevos.
-        Devuelve la respuesta estrictamente en un formato JSON válido que contenga:
+        // 3. Configurar modelo de Gemini
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-1.5-flash",
+            generationConfig: { responseMimeType: "application/json" } // Fuerza respuesta en JSON puro
+        });
+
+        const prompt = `
+        Eres un entrenador personal experto. Tu objetivo es armar una rutina de entrenamiento enfocada en la sobrecarga progresiva.
+        DEBES seleccionar los ejercicios ÚNICAMENTE de la siguiente lista JSON provista. No inventes ejercicios nuevos.
+        
+        Nivel del usuario: ${nivel_usuario}
+        Días por semana: ${dias_disponibles}
+        Ejercicios disponibles en la base de datos: ${JSON.stringify(ejerciciosDisponibles)}
+
+        Devuelve la respuesta estrictamente en un formato JSON válido con esta estructura:
         {
           "titulo": "Nombre de la rutina",
           "dias": [
@@ -46,7 +53,7 @@ export default async function handler(req, res) {
               "nombre_dia": "Día 1: Empuje",
               "ejercicios": [
                 {
-                  "ejercicio_id": id_numerico,
+                  "ejercicio_id": 1,
                   "nombre": "Nombre exacto",
                   "series": 3,
                   "repeticiones": "8-10",
@@ -57,27 +64,14 @@ export default async function handler(req, res) {
               ]
             }
           ]
-        }`;
-
-        const userPrompt = `
-        Nivel del usuario: ${nivel_usuario}
-        Días por semana: ${dias_disponibles}
-        Ejercicios disponibles en la base de datos: ${JSON.stringify(ejerciciosDisponibles)}
+        }
         `;
 
-        // 4. Llamada a la API de OpenAI
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt }
-            ],
-            response_format: { type: "json_object" }
-        });
+        // 4. Generar contenido con Gemini
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+        const rutinaJson = JSON.parse(responseText);
 
-        const rutinaJson = JSON.parse(completion.choices[0].message.content);
-
-        // 5. Responder al frontend con la rutina lista
         return res.status(200).json({ success: true, rutina: rutinaJson });
 
     } catch (error) {
