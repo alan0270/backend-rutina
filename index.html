@@ -8,145 +8,96 @@
   <script>
     tailwind.config = {
       darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-          }
-        }
-      }
+      theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } }
     }
   </script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
     input[type="number"]::-webkit-inner-spin-button, 
     input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-[#f7f8fa] dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen pb-10">
+<body class="bg-[#f7f8fa] dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen pb-20">
   <div id="root"></div>
 
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
+    // --- BASE DE DATOS DE EJERCICIOS ---
+    const baseEjercicios = [
+      { id: 'press_banca', nombre: "Press de Banca", musculo: "Pecho", icono: "🥩", axial: false, media: "" },
+      { id: 'aperturas', nombre: "Aperturas con Mancuernas", musculo: "Pecho", icono: "🦅", axial: false, media: "" },
+      { id: 'dominadas', nombre: "Dominadas / Jalón", musculo: "Espalda", icono: "🦇", axial: false, media: "" },
+      { id: 'remo_barra', nombre: "Remo con Barra", musculo: "Espalda", icono: "🚣", axial: true, media: "" },
+      { id: 'remo_maquina', nombre: "Remo en Máquina", musculo: "Espalda", icono: "🚣", axial: false, media: "" },
+      { id: 'sentadilla', nombre: "Sentadilla con Barra", musculo: "Piernas", icono: "🦵", axial: true, media: "" },
+      { id: 'prensa', nombre: "Prensa de Piernas", musculo: "Piernas", icono: "🦵", axial: false, media: "" },
+      { id: 'hip_thrust', nombre: "Hip Thrust", musculo: "Glúteos", icono: "🍑", axial: true, media: "" },
+      { id: 'puente_gluteo', nombre: "Puente de Glúteo (sin barra)", musculo: "Glúteos", icono: "🍑", axial: false, media: "" },
+      { id: 'press_militar', nombre: "Press Militar", musculo: "Hombros", icono: "🛡️", axial: true, media: "" },
+      { id: 'elevaciones_laterales', nombre: "Elevaciones Laterales", musculo: "Hombros", icono: "✈️", axial: false, media: "" },
+      { id: 'curl_biceps', nombre: "Curl de Bíceps", musculo: "Brazos", icono: "💪", axial: false, media: "" },
+      { id: 'extension_triceps', nombre: "Extensión de Tríceps", musculo: "Brazos", icono: "💪", axial: false, media: "" }
+    ];
+
+    // --- FORMATEADOR DE TEXTO ---
+    const formatReps = (ej) => `${ej.series} series x ${ej.repsBase} reps ${ej.nota ? '('+ej.nota+')' : ''} - ${ej.descanso}s desc.`;
+
     function App() {
-      // Estado principal de navegación
-      const [tab, setTab] = useState('generar');
-      const [darkMode, setDarkMode] = useState(false);
+      // ESTADOS PERSISTENTES
+      const useStickyState = (defaultValue, key) => {
+        const [value, setValue] = useState(() => {
+          const stickyValue = window.localStorage.getItem(key);
+          return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
+        });Aquí tienes el resumen de los cambios implementados:
+1. **Generación Inteligente y UI Limpia:** Reestructuré el motor de la IA para adaptar las rutinas por género, objetivo y lesiones reales (evitando cargas axiales si es necesario), y creé una función única para formatear textos de series/reps con imágenes (o íconos musculares) correctas por ejercicio.
+2. **Tracker de Entrenamiento y Progreso:** Transformé la pestaña "Entrenar" en un navegador paso a paso (ejercicio X de Y) donde puedes registrar peso y repeticiones por serie, guardando el historial para alimentar una nueva pestaña "Progreso" con gráficas y récords.
+3. **Progresión y Autorregulación:** El sistema ahora lee tu historial para sugerirte aumentos de peso si completaste las repeticiones objetivo en sesiones previas, y al finalizar tu semana de entrenamiento, te pregunta cómo te sentiste para ajustar el volumen de la siguiente semana.
 
-      useEffect(() => {
-        if (darkMode) document.documentElement.classList.add('dark');
-        else document.documentElement.classList.remove('dark');
-      }, [darkMode]);
+Aquí tienes el código **COMPLETO** (`index.html`) listo para desplegar en Vercel. Reemplaza todo el contenido de tu archivo por este:
 
-      const formControlClass = "w-full p-3.5 rounded-2xl bg-[#f4f5f7] dark:bg-gray-800/50 border-none text-[13px] font-medium focus:ring-2 focus:ring-blue-500 outline-none appearance-none text-gray-900 dark:text-white";
-      const labelClass = "block text-[10px] font-extrabold text-[#6b7280] dark:text-gray-400 uppercase tracking-widest mb-2 ml-1";
-
-      return (
-        <div className="max-w-md mx-auto p-4 space-y-5">
-          
-          {/* HEADER */}
-          <header className="bg-white dark:bg-gray-900 rounded-[2rem] py-3 px-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] flex justify-between items-center border border-gray-100 dark:border-gray-800">
-            <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 bg-[#2b6ded] text-white font-bold rounded-full flex items-center justify-center text-sm shadow-md">F</div>
-              <h1 className="text-[15px] font-black tracking-tight">FitAI <span className="text-[#2b6ded] font-medium">Pro</span></h1>
-            </div>
-            <button onClick={() => setDarkMode(!darkMode)} className="w-9 h-9 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-[15px]">
-              {darkMode ? '☀️' : '🌙'}
-            </button>
-          </header>
-
-          {/* NAVEGACIÓN UNIFICADA (5 Pestañas) */}
-          <nav className="bg-[#ecedf1] dark:bg-gray-800/60 p-1.5 rounded-full flex justify-between text-[11px] sm:text-[13px] font-semibold">
-            {['Generar', 'Entrenar', 'Social', 'Crear', 'Timer'].map(t => (
-              <button 
-                key={t}
-                onClick={() => setTab(t.toLowerCase())}
-                className={`flex-1 py-2.5 rounded-full transition-all ${
-                  tab === t.toLowerCase() 
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]' 
-                    : 'text-[#6b7280] dark:text-gray-400 hover:text-gray-900'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </nav>
-
-          {/* CONTENEDOR DE VISTAS */}
-          <main className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 dark:border-gray-800 min-h-[300px]">
-            
-            {/* 1. VISTA: GENERAR */}
-            {tab === 'generar' && (
-              <div className="space-y-4">
-                <h2 className="text-[20px] font-extrabold tracking-tight">Generador IA</h2>
-                <p className="text-[13px] text-[#6b7280]">Configura tus parámetros y deja que la IA diseñe tu plan.</p>
-                <input type="text" placeholder="Tu Nombre" className={formControlClass} />
-                <button className="w-full mt-2 py-4 rounded-[1.25rem] bg-gradient-to-r from-[#306ee8] to-[#1c4baf] text-white font-extrabold text-[11px] uppercase tracking-widest shadow-[0_8px_16px_rgba(48,110,232,0.25)]">
-                  Generar Rutina
-                </button>
-              </div>
-            )}
-
-            {/* 2. VISTA: ENTRENAR */}
-            {tab === 'entrenar' && (
-              <div className="space-y-4">
-                <h2 className="text-[20px] font-extrabold tracking-tight">Tu Entrenamiento</h2>
-                <div className="bg-[#f7f8fa] dark:bg-gray-800 p-4 rounded-[1.5rem]">
-                  <p className="text-[13px] text-gray-500 text-center py-6">No tienes ninguna rutina activa en este momento. Ve a "Generar" o "Crear" para empezar.</p>
-                </div>
-              </div>
-            )}
-
-            {/* 3. VISTA: SOCIAL (Corregido) */}
-            {tab === 'social' && (
-              <div className="space-y-4 text-center py-4">
-                <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🌍</div>
-                <h2 className="text-[20px] font-extrabold tracking-tight">Red de Atletas</h2>
-                <p className="text-[13px] text-[#6b7280] leading-relaxed">
-                  Próximamente podrás conectar con influencers, compartir tus rutinas y descubrir nuevos métodos de entrenamiento en esta sección.
-                </p>
-                <button className="mt-4 px-6 py-3 rounded-full bg-[#f4f5f7] dark:bg-gray-800 text-[12px] font-bold text-gray-700 dark:text-gray-300">
-                  Unirse a la lista de espera
-                </button>
-              </div>
-            )}
-
-            {/* 4. VISTA: CREAR */}
-            {tab === 'crear' && (
-              <div className="space-y-4">
-                <h2 className="text-[20px] font-extrabold tracking-tight">Creador Manual</h2>
-                <p className="text-[13px] text-[#6b7280]">Construye tu propia rutina desde cero.</p>
-                <input type="text" placeholder="Nombre de la rutina" className={formControlClass} />
-                <button className="w-full py-4 rounded-[1.25rem] bg-[#f4f5f7] dark:bg-gray-800 text-gray-900 dark:text-white font-extrabold text-[11px] uppercase tracking-widest mt-4">
-                  + Añadir Día
-                </button>
-              </div>
-            )}
-
-            {/* 5. VISTA: TIMER */}
-            {tab === 'timer' && (
-              <div className="space-y-4 text-center">
-                <h2 className="text-[20px] font-extrabold tracking-tight">Temporizador</h2>
-                <div className="text-[64px] font-black text-gray-900 dark:text-white my-6">00:00</div>
-                <div className="grid grid-cols-2 gap-4">
-                  <button className="py-4 rounded-[1.25rem] bg-[#306ee8] text-white font-extrabold text-[12px] uppercase">Iniciar</button>
-                  <button className="py-4 rounded-[1.25rem] bg-[#f4f5f7] dark:bg-gray-800 text-gray-900 dark:text-white font-extrabold text-[12px] uppercase">Reset</button>
-                </div>
-              </div>
-            )}
-
-          </main>
-        </div>
-      );
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>FitAI Pro</title>
+  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          spacing: { 'safe-bottom': 'env(safe-area-inset-bottom)' }
+        }
+      }
     }
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
   </script>
-</body>
-</html>
+  <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)" crossorigin></script>
+  <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)" crossorigin></script>
+  <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
+  <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap)" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
+    input[type="number"]::-webkit-inner-spin-button, 
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-[#f7f8fa] dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))] transition-colors duration-300">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    // --- DICCIONARIO DE EJERCICIOS CON MEDIA E ÍCONOS ---
