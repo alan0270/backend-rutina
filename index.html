@@ -24,7 +24,7 @@ function usePersist(k,d){const[s,set]=useState(()=>ls.get(k,d));useEffect(()=>ls
 const U=id=>`https://images.unsplash.com/photo-${id}?w=400&auto=format&fit=crop&q=80`;
 const EMO={pecho:'💪',espalda:'🏋️',cuad:'🦵',post:'🍑',hombros:'🤸',brazos:'💪',core:'🔥'};
 const LBL={pecho:'Pecho',espalda:'Espalda',cuad:'Cuádriceps',post:'Glúteo y femoral',hombros:'Hombros',brazos:'Brazos',core:'Core'};
-// [grupo, nombre, descripción, equipo (g=gimnasio, m=mancuernas, c=sin equipo), flags (a=axial, r=rodilla, h=hombro), foto]
+
 const RAW=[
 ['pecho','Press de banca plano','Baja controlado hasta el pecho y empuja explosivo.','g','','1571019614242-c5c5dee9f50b'],
 ['pecho','Press inclinado con mancuernas','Enfócate en la parte alta del pecho.','m','h','1583454110551-21f2fa2afe61'],
@@ -57,27 +57,78 @@ const RAW=[
 ['core','Crunch abdominal','Sube el pecho sin tirar del cuello.','c','',''],
 ['core','Elevación de piernas','Espalda baja pegada al suelo.','c','','']
 ];
+
 const DB=RAW.map((r,i)=>({id:i,grupo:r[0],nombre:r[1],desc:r[2],eq:r[3],fl:r[4],img:r[5]?U(r[5]):''}));
 const mk=(e,s,r,d)=>({...e,series:s,reps:r,rest:d,done:0});
 const PAR={'Ganar músculo':{s:4,r:'8-12',d:75},'Fuerza':{s:4,r:'4-6',d:120},'Perder grasa':{s:3,r:'12-15',d:45}};
-const SPLIT=[['pecho','hombros','brazos'],['espalda','brazos','core'],['cuad','post','core'],['pecho','espalda','hombros'],['post','cuad','brazos'],['core','hombros','espalda']];
+
+// Distribución lógica por días
+const SPLIT_MAP = {
+  2: [['pecho','espalda','cuad','core'], ['hombros','post','brazos','core']],
+  3: [['pecho','hombros','brazos'], ['espalda','brazos','core'], ['cuad','post','core']],
+  4: [['pecho','hombros','brazos'], ['espalda','brazos','core'], ['hombros','core'], ['cuad','post']],
+  5: [['pecho','hombros','brazos'], ['espalda','brazos'], ['cuad','post'], ['pecho','espalda','hombros'], ['post','cuad']]
+};
 const NEX={'30':4,'45':5,'60':6,'90':8};
 
-function generar(f){
+function generarLocal(f){
   const ok={'Gimnasio completo':'gmc','Mancuernas':'mc','Sin equipo':'c'}[f.equipo],les=f.lesiones||[];
   const bad=e=>(les.includes('Espalda baja')&&e.fl.includes('a'))||(les.includes('Rodillas')&&e.fl.includes('r'))||(les.includes('Hombros')&&e.fl.includes('h'));
   const pool=g=>DB.filter(e=>e.grupo===g&&ok.includes(e.eq)&&!bad(e));
   const p=PAR[f.objetivo],aj={Principiante:-1,Intermedio:0,Avanzado:1}[f.nivel],d=+f.dias,n=NEX[f.duracion];
-  const base=d===2?[['pecho','espalda','cuad','core'],['hombros','post','brazos','core']]:SPLIT.slice(0,d);
+  
+  const base = SPLIT_MAP[d] || SPLIT_MAP[3];
+  
   const dias=base.map((g0,i)=>{
-    const gs=f.genero==='Mujer'?['post',...g0.filter(g=>g!=='post')]:g0;
+    const gs = g0; // Mantiene la división muscular limpia sin forzar glúteo en torso
     const pools=gs.map(g=>{const a=pool(g),o=a.length?i%a.length:0;return[...a.slice(o),...a.slice(0,o)]});
     const used=new Set(),out=[];let k=0,guard=0;
-    while(out.length<n&&guard++<80){const e=pools[k%pools.length].find(x=>!used.has(x.id));if(e){used.add(e.id);out.push(mk(e,Math.max(2,p.s+aj),p.r,p.d))}k++}
+    while(out.length<n&&guard++<80){
+      const currentPool = pools[k%pools.length];
+      if(currentPool) {
+        const e=currentPool.find(x=>!used.has(x.id));
+        if(e){used.add(e.id);out.push(mk(e,Math.max(2,p.s+aj),p.r,p.d))}
+      }
+      k++;
+    }
     return{nombre:`Día ${i+1}: ${g0.map(g=>LBL[g]).join(', ')}`,ejercicios:out};
   });
   const imc=f.peso&&f.estatura?(f.peso/((f.estatura/100)**2)).toFixed(1):null;
   return{nombre:`Rutina de ${f.nombre||'mí'}`,objetivo:f.objetivo,nivel:f.nivel,imc,dias};
+}
+
+async function generar(f) {
+  try {
+    const res = await fetch('/api/generar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nivel_usuario: f.nivel ? f.nivel.toLowerCase() : 'intermedio',
+        dias_disponibles: f.dias,
+        genero: f.genero
+      })
+    });
+    const data = await res.json();
+    if (data.success && data.rutina) {
+      const imc = f.peso && f.estatura ? (f.peso / ((f.estatura / 100) ** 2)).toFixed(1) : null;
+      return {
+        nombre: data.rutina.titulo || `Rutina de ${f.nombre || 'mí'}`,
+        objetivo: f.objetivo,
+        nivel: f.nivel,
+        imc,
+        dias: data.rutina.dias.map(d => ({
+          nombre: d.nombre_dia,
+          ejercicios: d.ejercicios.map(e => {
+            const baseEx = DB.find(x => x.nombre.toLowerCase().includes(e.nombre.toLowerCase())) || DB[0];
+            return mk(baseEx, e.series || 4, e.repeticiones || '8-12', e.descanso_segundos || 60);
+          })
+        }))
+      };
+    }
+  } catch (e) {
+    console.warn("Backend API no disponible, usando motor local...", e);
+  }
+  return generarLocal(f);
 }
 
 const card='bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-800';
@@ -98,7 +149,14 @@ function Generar({onGen}){
   const[f,setF]=usePersist('fit_perfil',DEF);const[ld,setLd]=useState(false);
   const s=k=>v=>setF({...f,[k]:v});
   const tg=l=>s('lesiones')(f.lesiones.includes(l)?f.lesiones.filter(x=>x!==l):[...f.lesiones,l]);
-  const go=e=>{e.preventDefault();setLd(true);setTimeout(()=>{setLd(false);onGen(generar(f),f)},500)};
+  const go=async e=>{
+    e.preventDefault();
+    setLd(true);
+    localStorage.removeItem('fit_rutina');
+    const nuevaRutina = await generar(f);
+    setLd(false);
+    onGen(nuevaRutina,f);
+  };
   const num=(k,l)=><Fld l={l}><input type="number" className={inp} value={f[k]} onChange={e=>s(k)(e.target.value)}/></Fld>;
   return <form onSubmit={go} className={card+' space-y-4'}>
     <div><h2 className="text-xl font-black">Diseña tu rutina</h2><p className="text-xs text-gray-500 mt-1">Cuéntame sobre ti y armo un plan a tu medida.</p></div>
