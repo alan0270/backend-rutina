@@ -35,37 +35,113 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    const DB_EJERCICIOS = {
+    // --- BASE DE DATOS AVANZADA DE EJERCICIOS CON BANDERAS AXIALES Y NIVELES ---
+    const DB_AVANZADA = {
       pecho: [
-        { 
-          id: 'press_banca_mancuerna', 
-          nombre: "Press de Banca con Mancuernas", 
-          musculo: "Pecho", 
-          media: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&auto=format&fit=crop&q=80", 
-          ejecucion: "Mantén el torso estable y controla la fase descendente.", 
-          error: "Perder la postura o acelerar demasiado." 
-        }
+        { nombre: "Press de Banca Plano", musculo: "Pecho", axial: false, media: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&auto=format&fit=crop&q=80", desc: "Controla la bajada y empuja explosivo." },
+        { nombre: "Press Inclinado con Mancuernas", musculo: "Pecho", axial: false, media: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&auto=format&fit=crop&q=80", desc: "Enfócate en la porción clavicular superior." },
+        { nombre: "Aperturas en Polea Alta", musculo: "Pecho", axial: false, media: "", desc: "Máxima contracción al centro sin doblar codos." }
       ],
       espalda: [
-        { 
-          id: 'remo_mancuerna', 
-          nombre: "Remo con Mancuerna", 
-          musculo: "Espalda", 
-          media: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&auto=format&fit=crop&q=80", 
-          ejecucion: "Tracciona llevando el codo hacia la cadera manteniendo la espalda recta.", 
-          error: "Rotar en exceso el torso." 
-        }
+        { nombre: "Jalón al Pecho en Polea", musculo: "Espalda", axial: false, media: "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=400&auto=format&fit=crop&q=80", desc: "Abre el pecho y lleva los codos hacia abajo." },
+        { nombre: "Remo con Mancuerna a 1 Mano", musculo: "Espalda", axial: false, media: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&auto=format&fit=crop&q=80", desc: "Espalda totalmente recta, tracciona hacia la cadera." },
+        { nombre: "Remo con Barra Libre", musculo: "Espalda", axial: true, media: "", desc: "Mantén el torso a 45 grados de inclinación." }
+      ],
+      piernas_cuad: [
+        { nombre: "Prensa de Piernas 45°", musculo: "Cuádriceps", axial: false, media: "https://images.unsplash.com/photo-1534367507873-d2d7e24c797f?w=400&auto=format&fit=crop&q=80", desc: "Profundidad completa sin despegar la cadera." },
+        { nombre: "Sentadilla Libre con Barra", musculo: "Piernas", axial: true, media: "", desc: "Rompe el paralelo manteniendo el core firme." },
+        { nombre: "Extensiones de Cuádriceps", musculo: "Cuádriceps", axial: false, media: "", desc: "Pausa de 1 segundo arriba en máxima extensión." }
       ],
       piernas_post: [
-        { 
-          id: 'hip_thrust', 
-          nombre: "Empuje de Cadera con Barra (Hip Thrust)", 
-          musculo: "Glúteos", 
-          media: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&auto=format&fit=crop&q=80", 
-          ejecucion: "Empuja con los talones y aprieta glúteos arriba sosteniendo el pico de contracción.", 
-          error: "Arquear la zona lumbar." 
-        }
+        { nombre: "Hip Thrust con Barra", musculo: "Glúteos", axial: false, media: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&auto=format&fit=crop&q=80", desc: "Aprieta los glúteos arriba con la mirada al frente." },
+        { nombre: "Peso Muerto Rumano", musculo: "Femorales", axial: true, media: "", desc: "Lleva la cadera hacia atrás sintiendo tensión en femoral." },
+        { nombre: "Curl Femoral Acostado", musculo: "Femorales", axial: false, media: "", desc: "Evita arquear la espalda al flexionar." }
+      ],
+      hombros: [
+        { nombre: "Press Militar con Mancuernas", musculo: "Hombros", axial: false, media: "", desc: "Empuje vertical controlado sobre la cabeza." },
+        { nombre: "Elevaciones Laterales", musculo: "Hombros", axial: false, media: "", desc: "Movimiento estricto guiado por los codos." }
+      ],
+      brazos: [
+        { nombre: "Curl de Bíceps con Barra EZ", musculo: "Brazos", axial: false, media: "", desc: "Evita el balanceo del cuerpo al subir." },
+        { nombre: "Extensiones de Tríceps en Polea", musculo: "Brazos", axial: false, media: "", desc: "Codos fijos pegados a los costados." }
       ]
+    };
+
+    // --- MOTOR IA INTELIGENTE Y ROBUSTO ---
+    const generarRutinaPro = (datos) => {
+      const { objetivo, dias, lesiones, nivel, genero } = datos;
+      const numDias = parseInt(dias) || 3;
+      const evitaAxial = lesiones.includes('Espalda baja');
+      const esHombre = genero === 'Hombre';
+
+      // Configuración de series y repeticiones según el nivel seleccionado
+      let configNivel = {
+        Principiante: { series: 3, reps: objetivo === 'Fuerza' ? '6-8' : '12-15', desc: '90s' },
+        Intermedio: { series: 4, reps: objetivo === 'Fuerza' ? '5-6' : '10-12', desc: '60s' },
+        Avanzado: { series: 5, reps: objetivo === 'Fuerza' ? '3-5' : '8-10', desc: '45s' }
+      }[nivel] || { series: 3, reps: '10-12', desc: '60s' };
+
+      // Filtrar ejercicios si hay lesión de espalda baja
+      const filtrar = (lista) => lista.filter(e => !(evitaAxial && e.axial));
+
+      const pool = {
+        pecho: filtrar(DB_AVANZADA.pecho),
+        espalda: filtrar(DB_AVANZADA.espalda),
+        cuad: filtrar(DB_AVANZADA.piernas_cuad),
+        post: filtrar(DB_AVANZADA.piernas_post),
+        hombros: filtrar(DB_AVANZADA.hombros),
+        brazos: filtrar(DB_AVANZADA.brazos)
+      };
+
+      // Estructura de días adaptada
+      let estructuraDias = [];
+      if (numDias === 3) {
+        estructuraDias = esHombre ? [
+          { nombre: `Día 1: Torso / Énfasis Empuje (${nivel})`, grupos: ['pecho', 'hombros', 'brazos'] },
+          { nombre: `Día 2: Piernas Completo (${nivel})`, grupos: ['cuad', 'post'] },
+          { nombre: `Día 3: Espalda & Brazos (${nivel})`, grupos: ['espalda', 'brazos'] }
+        ] : [
+          { nombre: `Día 1: Glúteo & Pierna (${nivel})`, grupos: ['post', 'cuad'] },
+          { nombre: `Día 2: Torso & Hombros (${nivel})`, grupos: ['pecho', 'espalda', 'hombros'] },
+          { nombre: `Día 3: Cadena Posterior (${nivel})`, grupos: ['post', 'brazos'] }
+        ];
+      } else {
+        estructuraDias = [
+          { nombre: `Día 1: Pecho y Tríceps (${nivel})`, grupos: ['pecho', 'brazos'] },
+          { nombre: `Día 2: Espalda y Bíceps (${nivel})`, grupos: ['espalda', 'brazos'] },
+          { nombre: `Día 3: Tren Inferior (Cuádriceps) (${nivel})`, grupos: ['cuad'] },
+          { nombre: `Día 4: Hombros y Glúteos (${nivel})`, grupos: ['hombros', 'post'] }
+        ].slice(0, numDias);
+      }
+
+      const diasGenerados = estructuraDias.map(dia => {
+        let ejerciciosDia = [];
+        dia.grupos.forEach(g => {
+          const seleccion = pool[g] || pool.pecho;
+          seleccion.forEach(item => {
+            ejerciciosDia.push({
+              nombre: item.nombre,
+              musculo: item.musculo,
+              media: item.media,
+              series: configNivel.series,
+              reps: configNivel.reps,
+              descanso: configNivel.descanso,
+              detalles: item.desc
+            });
+          });
+        });
+        return {
+          nombre: dia.nombre,
+          ejercicios: ejerciciosDia.slice(0, 5) // Máximo 5 ejercicios sólidos por sesión
+        };
+      });
+
+      return {
+        usuario: datos.nombre,
+        objetivo: datos.objetivo,
+        nivel: nivel,
+        dias: diasGenerados
+      };
     };
 
     function App() {
@@ -83,34 +159,27 @@
         duracion: '60 min', lesiones: 'Espalda baja (Evitar cargas axiales)', nivel: 'Intermedio'
       });
 
-      const [rutinaActual, setRutinaActual] = useState({
-        usuario: 'Alan',
-        objetivo: 'Ganar músculo',
-        dias: [
-          {
-            nombre: "Día 1: Sesión Personalizada",
-            ejercicios: [
-              { ...DB_EJERCICIOS.pecho[0], series: 4, repsBase: "10-12 reps (60s desc)" },
-              { ...DB_EJERCICIOS.espalda[0], series: 4, repsBase: "10-12 reps (60s desc)" }
-            ]
-          }
-        ]
+      const [rutinaActual, setRutinaActual] = useState(() => {
+        return generarRutinaPro({
+          nombre: 'Alan', genero: 'Hombre', objetivo: 'Ganar músculo',
+          dias: '3 días', lesiones: 'Espalda baja (Evitar cargas axiales)', nivel: 'Intermedio'
+        });
       });
 
+      const [loading, setLoading] = useState(false);
       const [sesionActiva, setSesionActiva] = useState(null);
-      const [timerSegs, setTimerSegs] = useState(45);
       const [timerCorriendo, setTimerCorriendo] = useState(false);
 
-      // ESTADO SOCIAL (INFLUENCERS Y FEED)
-      const [influencers, setInfluencers] = useState([
-        { id: 1, nombre: 'Carlos Coach', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80', seguido: false },
-        { id: 2, nombre: 'Sofia Fit', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80', seguido: true },
-      ]);
-
-      const [publicaciones, setPublicaciones] = useState([
-        { id: 1, autor: 'Carlos Coach', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80', titulo: 'Rutina de Hipertrofia Avanzada', contenido: 'Claves para maximizar el estímulo en pectoral.', vip: false, likes: 24 },
-        { id: 2, autor: 'Sofia Fit', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80', titulo: 'Guía VIP: Glúteo Perfecto en Casa', contenido: 'Ejecución exacta con sobrecarga progresiva avanzada.', vip: true, likes: 142 }
-      ]);
+      const handleGenerar = (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setTimeout(() => {
+          const nueva = generarRutinaPro(formData);
+          setRutinaActual(nueva);
+          setLoading(false);
+          setTab('entrenar');
+        }, 600);
+      };
 
       const formControlClass = "w-full p-3.5 rounded-2xl bg-[#f4f5f7] dark:bg-gray-800/50 border-none text-[13px] font-medium text-gray-900 dark:text-gray-100 outline-none";
       const labelClass = "block text-[10px] font-extrabold text-[#6b7280] dark:text-gray-400 uppercase tracking-widest mb-1.5 ml-1";
@@ -128,7 +197,6 @@
             </button>
           </header>
 
-          {/* NAVEGACIÓN CON PESTAÑA SOCIAL INCLUIDA */}
           <nav className="bg-[#ecedf1] dark:bg-gray-800/60 p-1.5 rounded-2xl flex justify-between text-[11px] font-semibold">
             {['Generar', 'Entrenar', 'Social', 'Crear', 'Timer'].map(t => (
               <button 
@@ -147,33 +215,85 @@
 
           <main className="space-y-4">
 
+            {/* GENERAR CON IA POTENCIADO */}
             {tab === 'generar' && (
-              <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
-                <h2 className="text-[20px] font-black text-gray-900 dark:text-white">Diseña tu Rutina Inteligente</h2>
-                <div><label className={labelClass}>NOMBRE</label><input type="text" value={formData.nombre} onChange={e=>setFormData({...formData, nombre: e.target.value})} className={formControlClass} /></div>
-                <button onClick={() => setTab('entrenar')} className="w-full py-4 rounded-[1.25rem] bg-[#306ee8] text-white font-extrabold text-[11px] uppercase tracking-widest shadow-md">
-                  GENERAR RUTINA CON IA
+              <form onSubmit={handleGenerar} className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
+                <div>
+                  <h2 className="text-[20px] font-black text-gray-900 dark:text-white">Diseña tu Rutina Inteligente</h2>
+                  <p className="text-[12px] text-[#6b7280] mt-1">Generación profesional adaptada a tu nivel físico real.</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className={labelClass}>NOMBRE</label><input type="text" value={formData.nombre} onChange={e=>setFormData({...formData, nombre: e.target.value})} className={formControlClass} /></div>
+                  <div>
+                    <label className={labelClass}>NIVEL</label>
+                    <select value={formData.nivel} onChange={e=>setFormData({...formData, nivel: e.target.value})} className={formControlClass}>
+                      <option>Principiante</option>
+                      <option>Intermedio</option>
+                      <option>Avanzado</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>OBJETIVO</label>
+                    <select value={formData.objetivo} onChange={e=>setFormData({...formData, objetivo: e.target.value})} className={formControlClass}>
+                      <option>Ganar músculo</option>
+                      <option>Perder grasa</option>
+                      <option>Fuerza</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>DÍAS POR SEMANA</label>
+                    <select value={formData.dias} onChange={e=>setFormData({...formData, dias: e.target.value})} className={formControlClass}>
+                      <option>3 días</option>
+                      <option>4 días</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>LESIONES / LIMITACIONES</label>
+                  <select value={formData.lesiones} onChange={e=>setFormData({...formData, lesiones: e.target.value})} className={formControlClass}>
+                    <option>Espalda baja (Evitar cargas axiales)</option>
+                    <option>Sin lesiones</option>
+                  </select>
+                </div>
+
+                <button type="submit" disabled={loading} className="w-full py-4 rounded-[1.25rem] bg-gradient-to-r from-[#306ee8] to-[#1c4baf] text-white font-extrabold text-[11px] uppercase tracking-widest shadow-md">
+                  {loading ? 'ANALIZANDO PERFIL...' : 'GENERAR RUTINA PROFESIONAL'}
                 </button>
-              </div>
+              </form>
             )}
 
+            {/* ENTRENAR CON RUTINA GENERADA */}
             {tab === 'entrenar' && !sesionActiva && (
               <div className="space-y-4">
+                <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-2xl flex justify-between items-center">
+                  <div>
+                    <h3 className="font-extrabold text-[14px] text-blue-600 dark:text-blue-400">Rutina Activa: {rutinaActual.usuario}</h3>
+                    <p className="text-[11px] text-gray-500">Nivel: <strong className="uppercase">{rutinaActual.nivel}</strong> • Objetivo: {rutinaActual.objetivo}</p>
+                  </div>
+                </div>
+
                 {rutinaActual.dias.map((dia, diaIdx) => (
                   <div key={diaIdx} className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
                     <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
-                      <h3 className="font-extrabold text-[16px]">{dia.nombre}</h3>
-                      <button onClick={() => setSesionActiva(dia)} className="text-[11px] font-bold text-[#2b6ded] bg-blue-50 px-3 py-1 rounded-full">Iniciar</button>
+                      <h3 className="font-extrabold text-[15px]">{dia.nombre}</h3>
+                      <button onClick={() => setSesionActiva(dia)} className="text-[11px] font-bold text-white bg-[#2b6ded] px-3.5 py-1.5 rounded-full shadow-sm">Iniciar</button>
                     </div>
-                    {dia.ejercicios.map((ej, ejIdx) => (
-                      <div key={ejIdx} className="bg-[#f7f8fa] dark:bg-gray-800/40 p-3.5 rounded-2xl flex gap-3 items-center">
-                        <img src={ej.media} className="w-14 h-14 object-cover rounded-xl" />
-                        <div>
-                          <h4 className="font-bold text-[13px]">{ej.nombre}</h4>
-                          <span className="text-[11px] font-bold text-[#2b6ded]">{ej.musculo}</span>
+                    <div className="space-y-3">
+                      {dia.ejercicios.map((ej, ejIdx) => (
+                        <div key={ejIdx} className="bg-[#f7f8fa] dark:bg-gray-800/40 p-3.5 rounded-2xl space-y-1">
+                          <div className="flex justify-between items-center">
+                            <h4 className="font-bold text-[13px]">{ej.nombre}</h4>
+                            <span className="text-[11px] font-bold text-[#2b6ded]">{ej.series} series × {ej.reps}</span>
+                          </div>
+                          <p className="text-[11px] text-gray-500">{ej.detalles} ({ej.descanso} descanso)</p>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -181,53 +301,25 @@
 
             {tab === 'entrenar' && sesionActiva && (
               <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
-                <h2 className="text-[18px] font-black">Sesión Guiada</h2>
-                <img src={DB_EJERCICIOS.piernas_post[0].media} className="w-full h-40 object-cover rounded-2xl" />
+                <h2 className="text-[18px] font-black">Sesión Guiada: {sesionActiva.nombre}</h2>
+                <p className="text-xs text-gray-500">Registra tus series y mantén el control de cargas.</p>
                 <button onClick={() => setSesionActiva(null)} className="w-full py-3.5 bg-green-600 text-white font-extrabold text-[12px] rounded-2xl">
-                  ✓ Completar Serie
+                  ✓ Finalizar Sesión
                 </button>
               </div>
             )}
 
-            {/* PESTAÑA SOCIAL (INFLUENCERS Y FEED VIP) */}
+            {/* PESTAÑA SOCIAL */}
             {tab === 'social' && (
               <div className="space-y-4">
                 <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
                   <h3 className="text-[14px] font-black uppercase tracking-wider text-gray-400">Comunidad & Influencers</h3>
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                    {influencers.map(inf => (
-                      <div key={inf.id} className="flex flex-col items-center space-y-1 min-w-[70px]">
-                        <img src={inf.avatar} className="w-14 h-14 rounded-full object-cover border-2 border-blue-500 p-0.5" />
-                        <span className="text-[11px] font-bold truncate w-full text-center">{inf.nombre}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {publicaciones.map(pub => (
-                    <div key={pub.id} className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <img src={pub.avatar} className="w-10 h-10 rounded-full object-cover" />
-                        <div>
-                          <h4 className="font-bold text-[13px]">{pub.autor}</h4>
-                          <span className="text-[10px] text-gray-400">Hace 2 horas</span>
-                        </div>
-                      </div>
-
-                      <h5 className="font-extrabold text-[15px]">{pub.titulo}</h5>
-                      <p className="text-[12px] text-gray-600 dark:text-gray-300">{pub.contenido}</p>
-
-                      {pub.vip ? (
-                        <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl text-center space-y-2">
-                          <span className="text-amber-500 font-bold text-xs">🔒 Contenido Exclusivo VIP</span>
-                          <button className="w-full py-2 bg-amber-500 text-black font-extrabold text-xs rounded-xl uppercase tracking-wider">Desbloquear por $4.99/mes</button>
-                        </div>
-                      ) : (
-                        <button className="w-full py-2 bg-[#2b6ded] text-white font-bold text-xs rounded-xl">Ver Rutina Completa</button>
-                      )}
+                    <div className="flex flex-col items-center space-y-1 min-w-[70px]">
+                      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" className="w-14 h-14 rounded-full object-cover border-2 border-blue-500 p-0.5" />
+                      <span className="text-[11px] font-bold">Carlos Coach</span>
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
             )}
