@@ -8,13 +8,16 @@
   <script>
     tailwind.config = {
       darkMode: 'class',
-      theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } }
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
     }
   </script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
@@ -24,80 +27,406 @@
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-[#f7f8fa] dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen pb-20">
+<body class="bg-[#f7f8fa] dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen pb-24 transition-colors duration-300">
   <div id="root"></div>
 
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // --- BASE DE DATOS DE EJERCICIOS ---
-    const baseEjercicios = [
-      { id: 'press_banca', nombre: "Press de Banca", musculo: "Pecho", icono: "🥩", axial: false, media: "" },
-      { id: 'aperturas', nombre: "Aperturas con Mancuernas", musculo: "Pecho", icono: "🦅", axial: false, media: "" },
-      { id: 'dominadas', nombre: "Dominadas / Jalón", musculo: "Espalda", icono: "🦇", axial: false, media: "" },
-      { id: 'remo_barra', nombre: "Remo con Barra", musculo: "Espalda", icono: "🚣", axial: true, media: "" },
-      { id: 'remo_maquina', nombre: "Remo en Máquina", musculo: "Espalda", icono: "🚣", axial: false, media: "" },
-      { id: 'sentadilla', nombre: "Sentadilla con Barra", musculo: "Piernas", icono: "🦵", axial: true, media: "" },
-      { id: 'prensa', nombre: "Prensa de Piernas", musculo: "Piernas", icono: "🦵", axial: false, media: "" },
-      { id: 'hip_thrust', nombre: "Hip Thrust", musculo: "Glúteos", icono: "🍑", axial: true, media: "" },
-      { id: 'puente_gluteo', nombre: "Puente de Glúteo (sin barra)", musculo: "Glúteos", icono: "🍑", axial: false, media: "" },
-      { id: 'press_militar', nombre: "Press Militar", musculo: "Hombros", icono: "🛡️", axial: true, media: "" },
-      { id: 'elevaciones_laterales', nombre: "Elevaciones Laterales", musculo: "Hombros", icono: "✈️", axial: false, media: "" },
-      { id: 'curl_biceps', nombre: "Curl de Bíceps", musculo: "Brazos", icono: "💪", axial: false, media: "" },
-      { id: 'extension_triceps', nombre: "Extensión de Tríceps", musculo: "Brazos", icono: "💪", axial: false, media: "" }
-    ];
+    // BASE DE DATOS DE EJERCICIOS CON MEDIA E ÍCONOS
+    const DB_EJERCICIOS = {
+      pecho: [
+        { nombre: "Press de Banca Plano", media: "", icono: "🦾", axial: false },
+        { nombre: "Press Inclinado con Mancuernas", media: "", icono: "🦾", axial: false },
+        { nombre: "Aperturas en Polea", media: "", icono: "🦅", axial: false }
+      ],
+      espalda: [
+        { nombre: "Jalón al Pecho", media: "", icono: "🦇", axial: false },
+        { nombre: "Remo con Barra", media: "", icono: "🚣", axial: true },
+        { nombre: "Remo en Polea", media: "", icono: "🚣", axial: false }
+      ],
+      piernas_cuad: [
+        { nombre: "Sentadilla con Barra", media: "", icono: "🦵", axial: true },
+        { nombre: "Prensa de Piernas", media: "", icono: "🦵", axial: false },
+        { nombre: "Extensión de Cuádriceps", media: "", icono: "🦵", axial: false }
+      ],
+      piernas_post: [
+        { nombre: "Peso Muerto Rumano", media: "", icono: "🍑", axial: true },
+        { nombre: "Hip Thrust con Barra", media: "", icono: "🍑", axial: true },
+        { nombre: "Curl Femoral", media: "", icono: "🦵", axial: false }
+      ],
+      hombros: [
+        { nombre: "Press Militar", media: "", icono: "🏋️", axial: true },
+        { nombre: "Elevaciones Laterales", media: "", icono: "🦅", axial: false }
+      ],
+      brazos: [
+        { nombre: "Curl de Bíceps", media: "", icono: "💪", axial: false },
+        { nombre: "Extensión de Tríceps Polea", media: "", icono: "💪", axial: false }
+      ]
+    };
 
-    // --- FORMATEADOR DE TEXTO ---
-    const formatReps = (ej) => `${ej.series} series x ${ej.repsBase} reps ${ej.nota ? '('+ej.nota+')' : ''} - ${ej.descanso}s desc.`;
+    // FORMATEADOR ÚNICO DE TEXTO
+    const formatearEjercicio = (series, reps, descanso, nota) => {
+      let texto = `${series} series × ${reps} reps`;
+      if (descanso) texto += ` • ${descanso}s desc.`;
+      if (nota) texto += ` • ${nota}`;
+      return texto;
+    };
 
     function App() {
-      // ESTADOS PERSISTENTES
-      const useStickyState = (defaultValue, key) => {
-        const [value, setValue] = useState(() => {
-          const stickyValue = window.localStorage.getItem(key);
-          return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
-        });Aquí tienes el resumen de los cambios implementados:
-1. **Generación Inteligente y UI Limpia:** Reestructuré el motor de la IA para adaptar las rutinas por género, objetivo y lesiones reales (evitando cargas axiales si es necesario), y creé una función única para formatear textos de series/reps con imágenes (o íconos musculares) correctas por ejercicio.
-2. **Tracker de Entrenamiento y Progreso:** Transformé la pestaña "Entrenar" en un navegador paso a paso (ejercicio X de Y) donde puedes registrar peso y repeticiones por serie, guardando el historial para alimentar una nueva pestaña "Progreso" con gráficas y récords.
-3. **Progresión y Autorregulación:** El sistema ahora lee tu historial para sugerirte aumentos de peso si completaste las repeticiones objetivo en sesiones previas, y al finalizar tu semana de entrenamiento, te pregunta cómo te sentiste para ajustar el volumen de la siguiente semana.
+      const [tab, setTab] = useState('generar');
+      const [darkMode, setDarkMode] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('fitai_dark')) || false; } catch(e) { return false; }
+      });
+      
+      const [rutinaActual, setRutinaActual] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('fitai_rutina')) || null; } catch(e) { return null; }
+      });
+      
+      const [historial, setHistorial] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('fitai_historial')) || []; } catch(e) { return []; }
+      });
 
-Aquí tienes el código **COMPLETO** (`index.html`) listo para desplegar en Vercel. Reemplaza todo el contenido de tu archivo por este:
+      const [formData, setFormData] = useState({
+        nombre: 'Alan', genero: 'Hombre', objetivo: 'Ganar músculo', dias: '3',
+        duracion: '60 min', lesiones: 'Espalda baja (Evitar cargas axiales)', nivel: 'Intermedio'
+      });
+      const [loadingIA, setLoadingIA] = useState(false);
 
-```html
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>FitAI Pro</title>
-  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-          spacing: { 'safe-bottom': 'env(safe-area-inset-bottom)' }
+      // ENTRENAMIENTO ACTIVO
+      const [sesionActiva, setSesionActiva] = useState(null);
+      const [ejercicioActualIdx, setEjercicioActualIdx] = useState(0);
+      const [setsData, setSetsData] = useState([]);
+
+      // CREADOR MANUAL
+      const [rutinaNueva, setRutinaNueva] = useState({ titulo: 'Mi Rutina', dias: [{ nombre: 'Día 1: Fullbody', ejercicios: [] }] });
+      const [diaSel, setDiaSel] = useState(0);
+      const [nuevoEj, setNuevoEj] = useState({ nombre: '', series: 3, reps: '10', descanso: 60, nota: '' });
+
+      // TIMER
+      const [timerConfig, setTimerConfig] = useState({ prep: 5, trabajo: 45, descanso: 10, rondas: 10 });
+      const [timerEstado, setTimerEstado] = useState({ corriendo: false, fase: 'PREPÁRATE', ronda: 1, segs: 5 });
+
+      useEffect(() => {
+        try {
+          localStorage.setItem('fitai_dark', JSON.stringify(darkMode));
+          if (darkMode) document.documentElement.classList.add('dark');
+          else document.documentElement.classList.remove('dark');
+        } catch(e){}
+      }, [darkMode]);
+
+      useEffect(() => {
+        try { localStorage.setItem('fitai_rutina', JSON.stringify(rutinaActual)); } catch(e){}
+      }, [rutinaActual]);
+
+      useEffect(() => {
+        try { localStorage.setItem('fitai_historial', JSON.stringify(historial)); } catch(e){}
+      }, [historial]);
+
+      // GENERADOR IA
+      const generarRutina = (e) => {
+        e.preventDefault();
+        setLoadingIA(true);
+        setTimeout(() => {
+          const numDias = parseInt(formData.dias);
+          const evitaAxial = formData.lesiones.includes('Espalda baja');
+          const esHombre = formData.genero === 'Hombre';
+          const seriesBase = formData.nivel === 'Avanzado' ? 4 : 3;
+
+          const filtrar = (arr) => arr.filter(ej => !(evitaAxial && ej.axial));
+          const dbSegura = {
+            pecho: filtrar(DB_EJERCICIOS.pecho),
+            espalda: filtrar(DB_EJERCICIOS.espalda),
+            piernas_cuad: filtrar(DB_EJERCICIOS.piernas_cuad),
+            piernas_post: filtrar(DB_EJERCICIOS.piernas_post),
+            hombros: filtrar(DB_EJERCICIOS.hombros),
+            brazos: filtrar(DB_EJERCICIOS.brazos)
+          };
+
+          let plantillas = [];
+          if (numDias === 3) {
+            plantillas = esHombre 
+              ? [ { n: "Día 1: Pecho, Hombro y Tríceps", g: ['pecho', 'hombros', 'brazos'] },
+                  { n: "Día 2: Piernas Completas", g: ['piernas_cuad', 'piernas_post'] },
+                  { n: "Día 3: Espalda y Bíceps", g: ['espalda', 'brazos'] } ]
+              : [ { n: "Día 1: Tren Inferior", g: ['piernas_post', 'piernas_cuad'] },
+                  { n: "Día 2: Tren Superior", g: ['pecho', 'espalda', 'hombros'] },
+                  { n: "Día 3: Piernas y Brazos", g: ['piernas_cuad', 'brazos'] } ];
+          } else {
+            plantillas = [
+              { n: "Día 1: Torso", g: ['pecho', 'espalda', 'hombros'] },
+              { n: "Día 2: Piernas", g: ['piernas_cuad', 'piernas_post'] },
+              { n: "Día 3: Empuje", g: ['pecho', 'hombros', 'brazos'] },
+              { n: "Día 4: Tracción", g: ['espalda', 'brazos'] }
+            ];
+          }
+
+          const diasGenerados = plantillas.slice(0, numDias).map(p => {
+            let ejs = [];
+            p.g.forEach(grupo => {
+              const opciones = dbSegura[grupo];
+              if (opciones && opciones.length > 0) {
+                const item = opciones[0];
+                ejs.push({
+                  id: item.nombre,
+                  nombre: item.nombre,
+                  media: item.media,
+                  icono: item.icono,
+                  series: seriesBase,
+                  reps: formData.objetivo === 'Fuerza' ? '5-8' : '8-12',
+                  descanso: 90,
+                  nota: "Enfocar en rango de movimiento"
+                });
+              }
+            });
+            return { nombre: p.n, ejercicios: ejs };
+          });
+
+          setRutinaActual({ usuario: formData.nombre, objetivo: formData.objetivo, dias: diasGenerados });
+          setLoadingIA(false);
+          setTab('entrenar');
+        }, 600);
+      };
+
+      // INICIAR SESIÓN DE ENTRENAMIENTO
+      const iniciarSesion = (dia) => {
+        const sesion = { fecha: new Date().toISOString(), nombreDia: dia.nombre, ejercicios: dia.ejercicios, data: [] };
+        setSesionActiva(sesion);
+        setEjercicioActualIdx(0);
+        prepararEjercicio(0, dia.ejercicios);
+      };
+
+      const prepararEjercicio = (idx, ejs) => {
+        const ej = ejs[idx];
+        const initialSets = Array.from({ length: ej.series }, () => ({ peso: '', reps: '' }));
+        setSetsData(initialSets);
+      };
+
+      const cambiarEjercicio = (dir) => {
+        let newData = [...(sesionActiva.data || [])];
+        newData[ejercicioActualIdx] = setsData;
+        setSesionActiva(prev => ({ ...prev, data: newData }));
+
+        const nextIdx = ejercicioActualIdx + dir;
+        if (nextIdx >= 0 && nextIdx < sesionActiva.ejercicios.length) {
+          setEjercicioActualIdx(nextIdx);
+          prepararEjercicio(nextIdx, sesionActiva.ejercicios);
         }
-      }
+      };
+
+      const finalizarSesion = () => {
+        let newData = [...(sesionActiva.data || [])];
+        newData[ejercicioActualIdx] = setsData;
+
+        const guardado = {
+          fecha: sesionActiva.fecha,
+          nombreDia: sesionActiva.nombreDia,
+          ejercicios: sesionActiva.ejercicios.map((ej, i) => ({
+            nombre: ej.nombre,
+            sets: newData[i] || []
+          }))
+        };
+
+        setHistorial([guardado, ...historial]);
+        setSesionActiva(null);
+        setTab('progreso');
+      };
+
+      const inputClass = "w-full p-3.5 rounded-2xl bg-[#f4f5f7] dark:bg-gray-800 border-none text-[13px] font-medium text-gray-900 dark:text-gray-100 outline-none";
+      const labelClass = "block text-[10px] font-extrabold text-gray-500 uppercase tracking-widest mb-1 ml-1";
+      const btnPrimary = "w-full py-4 rounded-[1.25rem] bg-[#306ee8] text-white font-extrabold text-[12px] uppercase tracking-widest shadow-md";
+
+      return (
+        <div className="max-w-md mx-auto p-4 space-y-5">
+          {/* HEADER */}
+          <header className="bg-white dark:bg-gray-900 rounded-[2rem] py-3 px-4 shadow-sm flex justify-between items-center border border-gray-100 dark:border-gray-800">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 bg-[#306ee8] text-white font-bold rounded-full flex items-center justify-center text-sm">F</div>
+              <h1 className="text-[16px] font-black tracking-tight">FitAI <span className="text-[#306ee8]">Pro</span></h1>
+            </div>
+            <button onClick={() => setDarkMode(!darkMode)} className="w-9 h-9 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-[15px]">
+              {darkMode ? '☀️' : '🌙'}
+            </button>
+          </header>
+
+          {/* BOTONERA NAVEGACIÓN */}
+          <nav className="fixed bottom-4 left-4 right-4 max-w-md mx-auto bg-white/90 dark:bg-gray-900/90 backdrop-blur-md p-1.5 rounded-[2rem] flex justify-between shadow-lg dark:border dark:border-gray-800 z-50">
+            {['Generar', 'Entrenar', 'Progreso', 'Crear', 'Timer'].map(t => (
+              <button key={t} onClick={() => setTab(t.toLowerCase())} 
+                className={`flex-1 py-3 text-center rounded-[1.25rem] text-[10px] font-extrabold uppercase tracking-wider ${tab === t.toLowerCase() ? 'bg-[#f4f5f7] dark:bg-gray-800 text-[#306ee8]' : 'text-gray-400'}`}>
+                {t}
+              </button>
+            ))}
+          </nav>
+
+          {/* VISTAS */}
+          <main className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800 min-h-[50vh]">
+            
+            {/* 1. GENERAR */}
+            {tab === 'generar' && (
+              <form onSubmit={generarRutina} className="space-y-4">
+                <h2 className="text-[20px] font-black">Generador IA</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className={labelClass}>Nombre</label><input type="text" value={formData.nombre} onChange={e=>setFormData({...formData, nombre: e.target.value})} className={inputClass}/></div>
+                  <div><label className={labelClass}>Género</label><select value={formData.genero} onChange={e=>setFormData({...formData, genero: e.target.value})} className={inputClass}><option>Hombre</option><option>Mujer</option></select></div>
+                  <div><label className={labelClass}>Objetivo</label><select value={formData.objetivo} onChange={e=>setFormData({...formData, objetivo: e.target.value})} className={inputClass}><option>Ganar músculo</option><option>Perder grasa</option><option>Fuerza</option></select></div>
+                  <div><label className={labelClass}>Días</label><select value={formData.dias} onChange={e=>setFormData({...formData, dias: e.target.value})} className={inputClass}><option value="3">3 Días</option><option value="4">4 Días</option></select></div>
+                </div>
+                <div>
+                  <label className={labelClass}>Lesiones</label>
+                  <select value={formData.lesiones} onChange={e=>setFormData({...formData, lesiones: e.target.value})} className={inputClass}>
+                    <option>Sin lesiones</option>
+                    <option>Espalda baja (Evitar cargas axiales)</option>
+                  </select>
+                </div>
+                <button type="submit" disabled={loadingIA} className={btnPrimary}>{loadingIA ? 'Generando...' : 'Crear Rutina'}</button>
+              </form>
+            )}
+
+            {/* 2. ENTRENAR */}
+            {tab === 'entrenar' && !sesionActiva && (
+              <div className="space-y-4">
+                {!rutinaActual ? (
+                  <p className="text-center text-gray-400 text-[13px] py-8">No hay una rutina activa. Genera una en la primera pestaña.</p>
+                ) : (
+                  <>
+                    <h2 className="text-[20px] font-black">Rutina de {rutinaActual.usuario}</h2>
+                    {rutinaActual.dias.map((dia, i) => (
+                      <div key={i} className="bg-[#f7f8fa] dark:bg-gray-800/40 p-4 rounded-2xl space-y-3">
+                        <div className="flex justify-between items-center">
+                          <h3 className="font-bold text-[14px]">{dia.nombre}</h3>
+                          <button onClick={() => iniciarSesion(dia)} className="px-4 py-1.5 bg-[#306ee8] text-white text-[11px] font-bold rounded-full uppercase">Iniciar</button>
+                        </div>
+                        <div className="space-y-2">
+                          {dia.ejercicios.map((ej, j) => (
+                            <div key={j} className="flex items-center gap-3 bg-white dark:bg-gray-900 p-2.5 rounded-xl text-[12px] shadow-sm">
+                              <span className="text-2xl">{ej.icono || '🏋️'}</span>
+                              <div>
+                                <p className="font-bold">{ej.nombre}</p>
+                                <p className="text-gray-400 text-[11px]">{formatearEjercicio(ej.series, ej.reps, ej.descanso, ej.nota)}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ENTRENAMIENTO ACTIVO */}
+            {tab === 'entrenar' && sesionActiva && (
+              <div className="space-y-4">
+                <div className="flex justify-between text-[11px] font-bold text-gray-400">
+                  <span>{sesionActiva.nombreDia}</span>
+                  <span>Ej {ejercicioActualIdx + 1} de {sesionActiva.ejercicios.length}</span>
+                </div>
+
+                <div className="bg-[#f7f8fa] dark:bg-gray-800 p-6 rounded-2xl text-center">
+                  <span className="text-4xl">{sesionActiva.ejercicios[ejercicioActualIdx].icono || '🏋️'}</span>
+                  <h3 className="text-[20px] font-black mt-2">{sesionActiva.ejercicios[ejercicioActualIdx].nombre}</h3>
+                  <p className="text-[#306ee8] text-[12px] font-bold mt-1">{formatearEjercicio(sesionActiva.ejercicios[ejercicioActualIdx].series, sesionActiva.ejercicios[ejercicioActualIdx].reps, null, null)}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 text-center text-[10px] font-bold text-gray-400 uppercase">
+                    <span>Set</span><span>Kg</span><span>Reps</span>
+                  </div>
+                  {setsData.map((s, idx) => (
+                    <div key={idx} className="grid grid-cols-3 gap-2 items-center">
+                      <span className="text-center font-bold text-[12px]">{idx + 1}</span>
+                      <input type="number" placeholder="Kg" value={s.peso} onChange={e=>{const n=[...setsData]; n[idx].peso=e.target.value; setSetsData(n);}} className={inputClass + " text-center py-2"} />
+                      <input type="number" placeholder="Reps" value={s.reps} onChange={e=>{const n=[...setsData]; n[idx].reps=e.target.value; setSetsData(n);}} className={inputClass + " text-center py-2"} />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  {ejercicioActualIdx > 0 && <button onClick={() => cambiarEjercicio(-1)} className="px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-xl font-bold text-[12px]">Anterior</button>}
+                  {ejercicioActualIdx < sesionActiva.ejercicios.length - 1 ? (
+                    <button onClick={() => cambiarEjercicio(1)} className="flex-1 py-3 bg-[#306ee8] text-white rounded-xl font-bold text-[12px]">Siguiente</button>
+                  ) : (
+                    <button onClick={finalizarSesion} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-[12px]">Finalizar</button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 3. PROGRESO */}
+            {tab === 'progreso' && (
+              <div className="space-y-4">
+                <h2 className="text-[20px] font-black">Historial</h2>
+                {historial.length === 0 ? <p className="text-gray-400 text-[12px]">Sin registros guardados aún.</p> : (
+                  <div className="space-y-3">
+                    {historial.map((h, i) => (
+                      <div key={i} className="p-4 bg-[#f7f8fa] dark:bg-gray-800 rounded-2xl">
+                        <div className="flex justify-between font-bold text-[13px]">
+                          <span>{h.nombreDia}</span>
+                          <span className="text-[10px] text-gray-400">{new Date(h.fecha).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-[11px] text-gray-500 mt-1">{h.ejercicios.map(e=>e.nombre).join(', ')}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 4. CREAR MANUAL */}
+            {tab === 'crear' && (
+              <div className="space-y-3">
+                <h2 className="text-[20px] font-black">Creador Manual</h2>
+                <input type="text" placeholder="Nombre de la rutina" value={rutinaNueva.titulo} onChange={e=>setRutinaNueva({...rutinaNueva, titulo: e.target.value})} className={inputClass} />
+                
+                <div className="bg-[#f7f8fa] dark:bg-gray-800 p-4 rounded-2xl space-y-2">
+                  <input type="text" placeholder="Nombre del ejercicio" value={nuevoEj.nombre} onChange={e=>setNuevoEj({...nuevoEj, nombre:e.target.value})} className={inputClass} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="number" placeholder="Series" value={nuevoEj.series} onChange={e=>setNuevoEj({...nuevoEj, series:e.target.value})} className={inputClass} />
+                    <input type="text" placeholder="Reps (ej: 10)" value={nuevoEj.reps} onChange={e=>setNuevoEj({...nuevoEj, reps:e.target.value})} className={inputClass} />
+                  </div>
+                  <button onClick={() => {
+                    if (nuevoEj.nombre) {
+                      const c = [...rutinaNueva.dias];
+                      c[diaSel].ejercicios.push({...nuevoEj});
+                      setRutinaNueva({...rutinaNueva, dias: c});
+                      setNuevoEj({nombre:'', series:3, reps:'10', descanso:60, nota:''});
+                    }
+                  }} className="w-full py-2 bg-gray-200 dark:bg-gray-700 font-bold text-[12px] rounded-xl">+ Añadir Ejercicio</button>
+                </div>
+
+                <div className="space-y-1">
+                  {rutinaNueva.dias[diaSel]?.ejercicios.map((ej, idx) => (
+                    <div key={idx} className="p-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg text-[12px] flex justify-between">
+                      <span>{ej.nombre}</span>
+                      <span className="font-bold">{ej.series}x{ej.reps}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button onClick={() => {
+                  setRutinaActual({usuario: rutinaNueva.titulo, objetivo: 'Manual', dias: rutinaNueva.dias});
+                  setTab('entrenar');
+                }} className={btnPrimary}>Guardar y Usar</button>
+              </div>
+            )}
+
+            {/* 5. TIMER */}
+            {tab === 'timer' && (
+              <div className="space-y-4 text-center py-4">
+                <h2 className="text-[20px] font-black">Temporizador</h2>
+                <div className="text-[56px] font-black text-[#306ee8]">00:45</div>
+                <button className={btnPrimary}>Iniciar Descanso</button>
+              </div>
+            )}
+
+          </main>
+        </div>
+      );
     }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
-  <script src="[https://unpkg.com/react@18/umd/react.production.min.js](https://unpkg.com/react@18/umd/react.production.min.js)" crossorigin></script>
-  <script src="[https://unpkg.com/react-dom@18/umd/react-dom.production.min.js](https://unpkg.com/react-dom@18/umd/react-dom.production.min.js)" crossorigin></script>
-  <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
-  <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap)" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
-    input[type="number"]::-webkit-inner-spin-button, 
-    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-  </style>
-</head>
-<body class="bg-[#f7f8fa] dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))] transition-colors duration-300">
-  <div id="root"></div>
-
-  <script type="text/babel">
-    const { useState, useEffect, useRef, useMemo } = React;
-
-    // --- DICCIONARIO DE EJERCICIOS CON MEDIA E ÍCONOS ---
+</body>
+</html>
