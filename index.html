@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>FitAI Pro - Social Fitness</title>
+  <title>FitAI Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
-          colors: {
-            primary: { 50: '#f0f7ff', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' }
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
           }
         }
       }
@@ -20,187 +20,235 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    body { -webkit-tap-highlight-color: transparent; user-select: none; }
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
+    input[type="number"]::-webkit-inner-spin-button, 
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-[#f4f5f8] dark:bg-gray-950 text-gray-800 dark:text-gray-100 min-h-screen font-sans pb-10">
+<body class="bg-[#f7f8fa] dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen pb-20">
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
 
-    // Datos simulados de Influencers y Feed (Mock Backend)
-    const INFLUENCERS_MOCK = [
-      {
-        id: 'inf-1',
-        nombre: 'Carlos "Titan" Ruiz',
-        handle: '@carlostitan',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        seguidores: '124K',
-        siguiendo: false,
-        vip: false
-      },
-      {
-        id: 'inf-2',
-        nombre: 'Sofía Fitness Pro',
-        handle: '@sofi_fit',
-        avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-        seguidores: '89K',
-        siguiendo: true,
-        vip: true
-      }
-    ];
-
-    const POSTS_MOCK = [
-      {
-        id: 'p-1',
-        influencerId: 'inf-1',
-        autor: 'Carlos "Titan" Ruiz',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        tiempo: 'Hace 2h',
-        texto: '¡Les dejo un tip clave para el Hip Thrust! Mantengan la mirada al frente durante todo el recorrido para no arquear la zona lumbar. 🍑🔥',
-        exclusivo: false,
-        likes: 342
-      },
-      {
-        id: 'p-2',
-        influencerId: 'inf-2',
-        autor: 'Sofía Fitness Pro',
-        avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-        tiempo: 'Hace 5h',
-        texto: '🔒 [RUTINA EXCLUSIVA VIP] Mi circuito semanal hipertrofia de glúteos y femorales ya está cargado para suscriptores.',
-        exclusivo: true,
-        likes: 890
-      }
-    ];
+    const DB_EJERCICIOS = {
+      pecho: [
+        { 
+          id: 'press_banca_mancuerna', 
+          nombre: "Press de Banca con Mancuernas", 
+          musculo: "Pecho", 
+          media: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&auto=format&fit=crop&q=80", 
+          ejecucion: "Mantén el torso estable y controla la fase descendente.", 
+          error: "Perder la postura o acelerar demasiado." 
+        }
+      ],
+      espalda: [
+        { 
+          id: 'remo_mancuerna', 
+          nombre: "Remo con Mancuerna", 
+          musculo: "Espalda", 
+          media: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&auto=format&fit=crop&q=80", 
+          ejecucion: "Tracciona llevando el codo hacia la cadera manteniendo la espalda recta.", 
+          error: "Rotar en exceso el torso." 
+        }
+      ],
+      piernas_post: [
+        { 
+          id: 'hip_thrust', 
+          nombre: "Empuje de Cadera con Barra (Hip Thrust)", 
+          musculo: "Glúteos", 
+          media: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&auto=format&fit=crop&q=80", 
+          ejecucion: "Empuja con los talones y aprieta glúteos arriba sosteniendo el pico de contracción.", 
+          error: "Arquear la zona lumbar." 
+        }
+      ]
+    };
 
     function App() {
       const [tab, setTab] = useState('generar');
       const [darkMode, setDarkMode] = useState(false);
-      const [influencers, setInfluencers] = useState(INFLUENCERS_MOCK);
-      const [posts, setPosts] = useState(POSTS_MOCK);
 
-      const toggleFollow = (id) => {
-        setInfluencers(prev => prev.map(inf => inf.id === id ? { ...inf, siguiendo: !inf.siguiendo } : inf));
-      };
+      useEffect(() => {
+        if (darkMode) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+      }, [darkMode]);
+
+      const [formData, setFormData] = useState({
+        nombre: 'Alan', genero: 'Hombre', edad: '24', estatura: '170',
+        objetivo: 'Ganar músculo', dias: '3 días', equipo: 'Gimnasio completo',
+        duracion: '60 min', lesiones: 'Espalda baja (Evitar cargas axiales)', nivel: 'Intermedio'
+      });
+
+      const [rutinaActual, setRutinaActual] = useState({
+        usuario: 'Alan',
+        objetivo: 'Ganar músculo',
+        dias: [
+          {
+            nombre: "Día 1: Sesión Personalizada",
+            ejercicios: [
+              { ...DB_EJERCICIOS.pecho[0], series: 4, repsBase: "10-12 reps (60s desc)" },
+              { ...DB_EJERCICIOS.espalda[0], series: 4, repsBase: "10-12 reps (60s desc)" }
+            ]
+          }
+        ]
+      });
+
+      const [sesionActiva, setSesionActiva] = useState(null);
+      const [timerSegs, setTimerSegs] = useState(45);
+      const [timerCorriendo, setTimerCorriendo] = useState(false);
+
+      // ESTADO SOCIAL (INFLUENCERS Y FEED)
+      const [influencers, setInfluencers] = useState([
+        { id: 1, nombre: 'Carlos Coach', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80', seguido: false },
+        { id: 2, nombre: 'Sofia Fit', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80', seguido: true },
+      ]);
+
+      const [publicaciones, setPublicaciones] = useState([
+        { id: 1, autor: 'Carlos Coach', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80', titulo: 'Rutina de Hipertrofia Avanzada', contenido: 'Claves para maximizar el estímulo en pectoral.', vip: false, likes: 24 },
+        { id: 2, autor: 'Sofia Fit', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80', titulo: 'Guía VIP: Glúteo Perfecto en Casa', contenido: 'Ejecución exacta con sobrecarga progresiva avanzada.', vip: true, likes: 142 }
+      ]);
+
+      const formControlClass = "w-full p-3.5 rounded-2xl bg-[#f4f5f7] dark:bg-gray-800/50 border-none text-[13px] font-medium text-gray-900 dark:text-gray-100 outline-none";
+      const labelClass = "block text-[10px] font-extrabold text-[#6b7280] dark:text-gray-400 uppercase tracking-widest mb-1.5 ml-1";
 
       return (
         <div className="max-w-md mx-auto p-4 space-y-4">
           
-          {/* Header */}
-          <header className="bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-sm flex justify-between items-center border border-gray-100 dark:border-gray-800">
+          <header className="bg-white dark:bg-gray-900 rounded-[2rem] py-3.5 px-5 shadow-sm border border-gray-100/80 dark:border-gray-800 flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-blue-400 text-white font-bold rounded-2xl flex items-center justify-center text-lg shadow-md shadow-blue-500/20">
-                F
-              </div>
-              <h1 className="text-lg font-black text-gray-900 dark:text-white tracking-tight">
-                FitAI <span className="text-blue-600">Pro</span>
-              </h1>
+              <div className="w-9 h-9 bg-[#2b6ded] text-white font-black rounded-full flex items-center justify-center text-sm shadow-sm">F</div>
+              <h1 className="text-[16px] font-black text-gray-900 dark:text-white tracking-tight">FitAI <span className="text-[#2b6ded] font-medium">Pro</span></h1>
             </div>
-            <button 
-              onClick={() => setDarkMode(!darkMode)}
-              className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center text-base"
-            >
-              {darkMode ? '☀️️' : '🌙'}
+            <button onClick={() => setDarkMode(!darkMode)} className="w-9 h-9 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-[15px]">
+              {darkMode ? '☀️' : '🌙'}
             </button>
           </header>
 
-          {/* Menú de Navegación */}
-          <nav className="bg-gray-200/70 dark:bg-gray-800/80 p-1.5 rounded-2xl grid grid-cols-5 gap-1 text-[11px] font-bold">
-            {['generar', 'entrenar', 'feed', 'crear', 'timer'].map(t => (
+          {/* NAVEGACIÓN CON PESTAÑA SOCIAL INCLUIDA */}
+          <nav className="bg-[#ecedf1] dark:bg-gray-800/60 p-1.5 rounded-2xl flex justify-between text-[11px] font-semibold">
+            {['Generar', 'Entrenar', 'Social', 'Crear', 'Timer'].map(t => (
               <button 
                 key={t}
-                onClick={() => setTab(t)}
-                className={`py-2 rounded-xl capitalize transition-all text-center ${tab === t ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500'}`}
+                onClick={() => setTab(t.toLowerCase())}
+                className={`flex-1 py-2 rounded-xl transition-all ${
+                  tab === t.toLowerCase() 
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm font-bold' 
+                    : 'text-[#6b7280] dark:text-gray-400'
+                }`}
               >
-                {t === 'feed' ? 'Social' : t}
+                {t}
               </button>
             ))}
           </nav>
 
-          {/* Contenido Principal */}
-          <main className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-800 space-y-5">
-            
-            {/* PESTAÑA SOCIAL / FEED DE INFLUENCERS */}
-            {tab === 'feed' && (
-              <div className="space-y-5">
-                <div>
-                  <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">Comunidad Fitness</h2>
-                  <p className="text-xs text-gray-400">Sigue a tus creadores favoritos y entrena con sus rutinas.</p>
-                </div>
+          <main className="space-y-4">
 
-                {/* carrusel de influencers recomendados */}
-                <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Creadores Destacados</span>
-                  <div className="flex space-x-3 overflow-x-auto pb-2">
-                    {influencers.map(inf => (
-                      <div key={inf.id} className="min-w-[140px] bg-gray-50 dark:bg-gray-800 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center space-y-2">
-                        <img src={inf.avatar} className="w-12 h-12 rounded-full object-cover" />
+            {tab === 'generar' && (
+              <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
+                <h2 className="text-[20px] font-black text-gray-900 dark:text-white">Diseña tu Rutina Inteligente</h2>
+                <div><label className={labelClass}>NOMBRE</label><input type="text" value={formData.nombre} onChange={e=>setFormData({...formData, nombre: e.target.value})} className={formControlClass} /></div>
+                <button onClick={() => setTab('entrenar')} className="w-full py-4 rounded-[1.25rem] bg-[#306ee8] text-white font-extrabold text-[11px] uppercase tracking-widest shadow-md">
+                  GENERAR RUTINA CON IA
+                </button>
+              </div>
+            )}
+
+            {tab === 'entrenar' && !sesionActiva && (
+              <div className="space-y-4">
+                {rutinaActual.dias.map((dia, diaIdx) => (
+                  <div key={diaIdx} className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
+                    <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
+                      <h3 className="font-extrabold text-[16px]">{dia.nombre}</h3>
+                      <button onClick={() => setSesionActiva(dia)} className="text-[11px] font-bold text-[#2b6ded] bg-blue-50 px-3 py-1 rounded-full">Iniciar</button>
+                    </div>
+                    {dia.ejercicios.map((ej, ejIdx) => (
+                      <div key={ejIdx} className="bg-[#f7f8fa] dark:bg-gray-800/40 p-3.5 rounded-2xl flex gap-3 items-center">
+                        <img src={ej.media} className="w-14 h-14 object-cover rounded-xl" />
                         <div>
-                          <p className="font-bold text-xs truncate max-w-[110px]">{inf.nombre}</p>
-                          <p className="text-[10px] text-gray-400">{inf.seguidores} seguidores</p>
+                          <h4 className="font-bold text-[13px]">{ej.nombre}</h4>
+                          <span className="text-[11px] font-bold text-[#2b6ded]">{ej.musculo}</span>
                         </div>
-                        <button 
-                          onClick={() => toggleFollow(inf.id)}
-                          className={`w-full py-1.5 rounded-xl text-[10px] font-bold shadow-sm transition-all ${
-                            inf.siguiendo 
-                              ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200' 
-                              : 'bg-blue-600 text-white'
-                          }`}
-                        >
-                          {inf.siguiendo ? 'Siguiendo' : 'Seguir'}
-                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {tab === 'entrenar' && sesionActiva && (
+              <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
+                <h2 className="text-[18px] font-black">Sesión Guiada</h2>
+                <img src={DB_EJERCICIOS.piernas_post[0].media} className="w-full h-40 object-cover rounded-2xl" />
+                <button onClick={() => setSesionActiva(null)} className="w-full py-3.5 bg-green-600 text-white font-extrabold text-[12px] rounded-2xl">
+                  ✓ Completar Serie
+                </button>
+              </div>
+            )}
+
+            {/* PESTAÑA SOCIAL (INFLUENCERS Y FEED VIP) */}
+            {tab === 'social' && (
+              <div className="space-y-4">
+                <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
+                  <h3 className="text-[14px] font-black uppercase tracking-wider text-gray-400">Comunidad & Influencers</h3>
+                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                    {influencers.map(inf => (
+                      <div key={inf.id} className="flex flex-col items-center space-y-1 min-w-[70px]">
+                        <img src={inf.avatar} className="w-14 h-14 rounded-full object-cover border-2 border-blue-500 p-0.5" />
+                        <span className="text-[11px] font-bold truncate w-full text-center">{inf.nombre}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Feed de publicaciones */}
-                <div className="space-y-4">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Publicaciones Recientes</span>
-                  {posts.map(post => (
-                    <div key={post.id} className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700 space-y-3">
+                <div className="space-y-3">
+                  {publicaciones.map(pub => (
+                    <div key={pub.id} className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
                       <div className="flex items-center space-x-3">
-                        <img src={post.avatar} className="w-9 h-9 rounded-full object-cover" />
+                        <img src={pub.avatar} className="w-10 h-10 rounded-full object-cover" />
                         <div>
-                          <p className="font-bold text-xs text-gray-900 dark:text-white">{post.autor}</p>
-                          <p className="text-[10px] text-gray-400">{post.tiempo}</p>
+                          <h4 className="font-bold text-[13px]">{pub.autor}</h4>
+                          <span className="text-[10px] text-gray-400">Hace 2 horas</span>
                         </div>
                       </div>
 
-                      <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
-                        {post.texto}
-                      </p>
+                      <h5 className="font-extrabold text-[15px]">{pub.titulo}</h5>
+                      <p className="text-[12px] text-gray-600 dark:text-gray-300">{pub.contenido}</p>
 
-                      {post.exclusivo && (
-                        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">Contenido VIP de Suscriptores</span>
-                          <button className="px-3 py-1 bg-amber-500 text-white font-bold text-[10px] rounded-lg shadow-sm">
-                            Desbloquear ($4.99/mes)
-                          </button>
+                      {pub.vip ? (
+                        <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl text-center space-y-2">
+                          <span className="text-amber-500 font-bold text-xs">🔒 Contenido Exclusivo VIP</span>
+                          <button className="w-full py-2 bg-amber-500 text-black font-extrabold text-xs rounded-xl uppercase tracking-wider">Desbloquear por $4.99/mes</button>
                         </div>
+                      ) : (
+                        <button className="w-full py-2 bg-[#2b6ded] text-white font-bold text-xs rounded-xl">Ver Rutina Completa</button>
                       )}
-
-                      <div className="flex items-center justify-between pt-1 text-[11px] text-gray-400 font-semibold">
-                        <button className="flex items-center space-x-1 hover:text-red-500">
-                          <span>❤️ {post.likes}</span>
-                        </button>
-                        <button className="text-blue-600 font-bold">
-                          Ver Rutina →
-                        </button>
-                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {tab === 'generar' && (
-              <div className="text-center py-8 text-xs text-gray-400 font-medium">
-                Pestaña de Generador IA Activa. Selecciona <span className="text-blue-600 font-bold">Social</span> para explorar la red de influencers.
+            {tab === 'crear' && (
+              <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800 space-y-4">
+                <h2 className="text-[20px] font-black">Creador Manual</h2>
+                <input type="text" placeholder="Nombre de la rutina..." className={formControlClass} />
               </div>
             )}
+
+            {tab === 'timer' && (
+              <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-8 shadow-sm border border-gray-100 dark:border-gray-800 text-center space-y-4">
+                <span className="text-[10px] font-black text-[#2b6ded] uppercase">PREPÁRATE</span>
+                <div className="text-[64px] font-black leading-none">00:45</div>
+                <button onClick={()=>setTimerCorriendo(!timerCorriendo)} className="px-7 py-2.5 bg-[#306ee8] text-white font-bold text-[12px] rounded-xl">
+                  {timerCorriendo ? 'Pausar' : 'Iniciar'}
+                </button>
+              </div>
+            )}
+
           </main>
         </div>
       );
