@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>FitAI Pro - Social Fitness</title>
+  <title>FitAI Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -11,84 +11,264 @@
       theme: {
         extend: {
           colors: {
-            primary: { 50: '#f0f7ff', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' }
+            primary: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            }
           }
         }
       }
     }
   </script>
+  <!-- React & Babel -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    body { -webkit-tap-highlight-color: transparent; user-select: none; }
+    body {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
   </style>
 </head>
 <body class="bg-[#f4f5f8] dark:bg-gray-950 text-gray-800 dark:text-gray-100 min-h-screen font-sans pb-10">
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef, Component } = React;
 
-    // Datos simulados de Influencers y Feed (Mock Backend)
-    const INFLUENCERS_MOCK = [
-      {
-        id: 'inf-1',
-        nombre: 'Carlos "Titan" Ruiz',
-        handle: '@carlostitan',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        seguidores: '124K',
-        siguiendo: false,
-        vip: false
-      },
-      {
-        id: 'inf-2',
-        nombre: 'Sofía Fitness Pro',
-        handle: '@sofi_fit',
-        avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-        seguidores: '89K',
-        siguiendo: true,
-        vip: true
+    class ErrorBoundary extends Component {
+      constructor(props) {
+        super(props);
+        this.state = { hasError: false };
       }
-    ];
+      static getDerivedStateFromError(error) {
+        return { hasError: true };
+      }
+      componentDidCatch(error, errorInfo) {
+        console.error("Error visual:", error, errorInfo);
+      }
+      render() {
+        if (this.state.hasError) {
+          return (
+            <div className="p-6 text-center min-h-screen flex flex-col justify-center items-center bg-[#f4f5f8] dark:bg-gray-950">
+              <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-xl max-w-sm space-y-4 border border-red-100">
+                <div className="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto text-xl font-bold">!</div>
+                <h2 className="font-bold text-gray-900 dark:text-white text-lg">Se produjo un error de renderizado</h2>
+                <button 
+                  onClick={() => {
+                    localStorage.clear();
+                    window.location.reload();
+                  }}
+                  className="w-full py-3 bg-blue-600 text-white font-bold text-xs rounded-2xl shadow-lg"
+                >
+                  Restaurar Aplicación
+                </button>
+              </div>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
 
-    const POSTS_MOCK = [
-      {
-        id: 'p-1',
-        influencerId: 'inf-1',
-        autor: 'Carlos "Titan" Ruiz',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        tiempo: 'Hace 2h',
-        texto: '¡Les dejo un tip clave para el Hip Thrust! Mantengan la mirada al frente durante todo el recorrido para no arquear la zona lumbar. 🍑🔥',
-        exclusivo: false,
-        likes: 342
-      },
-      {
-        id: 'p-2',
-        influencerId: 'inf-2',
-        autor: 'Sofía Fitness Pro',
-        avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-        tiempo: 'Hace 5h',
-        texto: '🔒 [RUTINA EXCLUSIVA VIP] Mi circuito semanal hipertrofia de glúteos y femorales ya está cargado para suscriptores.',
-        exclusivo: true,
-        likes: 890
-      }
-    ];
+    // GENERADOR LOCAL DE RUTINAS
+    const generarRutinaLocal = (datos) => {
+      const { objetivo, dias, lesiones, nivel } = datos;
+      const numDias = parseInt(dias) || 3;
+
+      const plantillaBase = [
+        {
+          nombre: "Día 1: Torso / Fuerza Superior",
+          ejercicios: [
+            { nombre: "Press de Banca Plano", series: 4, repsBase: 10, descansoSeg: 90 },
+            { nombre: "Jalón al Pecho", series: 4, repsBase: 12, descansoSeg: 60 },
+            { nombre: "Press Militar con Mancuernas", series: 3, repsBase: 10, descansoSeg: 60 },
+            { nombre: "Remo Horizontal en Polea", series: 3, repsBase: 12, descansoSeg: 60 }
+          ]
+        },
+        {
+          nombre: "Día 2: Pierna y Core",
+          ejercicios: [
+            { nombre: lesiones.includes("Espalda baja") ? "Prensa de Piernas Inclinada" : "Sentadilla con Barra", series: 4, repsBase: 10, descansoSeg: 90 },
+            { nombre: "Hip Thrust con Barra", series: 4, repsBase: 12, descansoSeg: 60 },
+            { nombre: "Prensa de Piernas Inclinada", series: 3, repsBase: 12, descansoSeg: 60 },
+            { nombre: "Elevación de Talones en Máquina", series: 4, repsBase: 15, descansoSeg: 45 }
+          ]
+        },
+        {
+          nombre: "Día 3: Fullbody / Hipertrofia",
+          ejercicios: [
+            { nombre: "Press Inclinado con Mancuernas", series: 4, repsBase: 10, descansoSeg: 60 },
+            { nombre: "Remo con Mancuerna", series: 4, repsBase: 10, descansoSeg: 60 },
+            { nombre: "Zancadas / Lunges Búlgaras", series: 3, repsBase: 12, descansoSeg: 60 },
+            { nombre: "Curl de Bíceps + Extensión Tríceps", series: 3, repsBase: 12, descansoSeg: 45 }
+          ]
+        },
+        {
+          nombre: "Día 4: Hombro y Brazo Focus",
+          ejercicios: [
+            { nombre: "Elevaciones Laterales", series: 4, repsBase: 15, descansoSeg: 45 },
+            { nombre: "Press Arnold", series: 3, repsBase: 10, descansoSeg: 60 },
+            { nombre: "Curl Martillo", series: 4, repsBase: 12, descansoSeg: 45 },
+            { nombre: "Extensión de Tríceps Polea Alta", series: 4, repsBase: 12, descansoSeg: 45 }
+          ]
+        },
+        {
+          nombre: "Día 5: Pierna Enfoque Isquios y Glúteo",
+          ejercicios: [
+            { nombre: "Peso Muerto Rumano", series: 4, repsBase: 10, descansoSeg: 90 },
+            { nombre: "Hip Thrust con Barra", series: 4, repsBase: 10, descansoSeg: 60 },
+            { nombre: "Curl Femoral Tumbado", series: 3, repsBase: 12, descansoSeg: 60 },
+            { nombre: "Abductores en Máquina", series: 3, repsBase: 15, descansoSeg: 45 }
+          ]
+        }
+      ];
+
+      return {
+        usuario: datos.nombre,
+        dias: plantillaBase.slice(0, numDias)
+      };
+    };
 
     function App() {
       const [tab, setTab] = useState('generar');
-      const [darkMode, setDarkMode] = useState(false);
-      const [influencers, setInfluencers] = useState(INFLUENCERS_MOCK);
-      const [posts, setPosts] = useState(POSTS_MOCK);
+      const [darkMode, setDarkMode] = useState(() => localStorage.getItem('fitai_theme') === 'dark');
 
-      const toggleFollow = (id) => {
-        setInfluencers(prev => prev.map(inf => inf.id === id ? { ...inf, siguiendo: !inf.siguiendo } : inf));
+      const [formData, setFormData] = useState({
+        nombre: 'Alan',
+        genero: 'Hombre',
+        edad: '24',
+        estatura: '170',
+        objetivo: 'Ganar músculo',
+        dias: '3 días',
+        equipo: 'Gimnasio completo',
+        duracion: '60 min',
+        lesiones: 'Espalda baja (Evitar cargas axiales)',
+        nivel: 'Intermedio'
+      });
+
+      const [loading, setLoading] = useState(false);
+      const [rutinaActual, setRutinaActual] = useState(() => {
+        try {
+          const saved = localStorage.getItem('fitai_rutina');
+          return saved ? JSON.parse(saved) : null;
+        } catch(e) { return null; }
+      });
+
+      const [rutinaEditando, setRutinaEditando] = useState({ titulo: 'Mi Rutina Personalizada', ejercicios: [] });
+
+      const [sesionActiva, setSesionActiva] = useState(null);
+      const [tiempoRestante, setTiempoRestante] = useState(0);
+      const finTiempoRef = useRef(null);
+
+      const [timerConfig, setTimerConfig] = useState({ prep: 5, trabajo: 30, descanso: 30, rondas: 3 });
+      const [timerEstado, setTimerEstado] = useState({ corriendo: false, fase: 'PREP', rondaActual: 1, segundosTotales: 5 });
+      const timerTargetRef = useRef(null);
+
+      useEffect(() => {
+        if (darkMode) {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('fitai_theme', 'dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('fitai_theme', 'light');
+        }
+      }, [darkMode]);
+
+      useEffect(() => {
+        if (rutinaActual) localStorage.setItem('fitai_rutina', JSON.stringify(rutinaActual));
+      }, [rutinaActual]);
+
+      const hablar = (texto) => {
+        if ('speechSynthesis' in window) {
+          try {
+            window.speechSynthesis.cancel();
+            const ut = new SpeechSynthesisUtterance(texto);
+            ut.lang = 'es-ES';
+            window.speechSynthesis.speak(ut);
+          } catch(e){}
+        }
+      };
+
+      useEffect(() => {
+        let interval = null;
+        if (timerEstado.corriendo) {
+          interval = setInterval(() => {
+            const ahora = Date.now();
+            const rest = Math.max(0, Math.ceil((timerTargetRef.current - ahora) / 1000));
+            setTimerEstado(prev => ({ ...prev, segundosTotales: rest }));
+
+            if (rest <= 0) {
+              if (timerEstado.fase === 'PREP') {
+                hablar("¡A trabajar!");
+                timerTargetRef.current = Date.now() + timerConfig.trabajo * 1000;
+                setTimerEstado(prev => ({ ...prev, fase: 'TRABAJO', segundosTotales: timerConfig.trabajo }));
+              } else if (timerEstado.fase === 'TRABAJO') {
+                hablar("Descanso");
+                timerTargetRef.current = Date.now() + timerConfig.descanso * 1000;
+                setTimerEstado(prev => ({ ...prev, fase: 'DESCANSO', segundosTotales: timerConfig.descanso }));
+              } else if (timerEstado.fase === 'DESCANSO') {
+                if (timerEstado.rondaActual < timerConfig.rondas) {
+                  hablar(`Ronda ${timerEstado.rondaActual + 1}. ¡A trabajar!`);
+                  timerTargetRef.current = Date.now() + timerConfig.trabajo * 1000;
+                  setTimerEstado(prev => ({
+                    ...prev,
+                    fase: 'TRABAJO',
+                    rondaActual: prev.rondaActual + 1,
+                    segundosTotales: timerConfig.trabajo
+                  }));
+                } else {
+                  hablar("Entrenamiento completado");
+                  setTimerEstado(prev => ({ ...prev, corriendo: false, fase: 'FIN', segundosTotales: 0 }));
+                  clearInterval(interval);
+                }
+              }
+            }
+          }, 200);
+        }
+        return () => clearInterval(interval);
+      }, [timerEstado.corriendo, timerEstado.fase, timerEstado.rondaActual, timerConfig]);
+
+      const iniciarTimerConfigurable = () => {
+        hablar(`Prepárate. ${timerConfig.prep} segundos`);
+        timerTargetRef.current = Date.now() + timerConfig.prep * 1000;
+        setTimerEstado({
+          corriendo: true,
+          fase: 'PREP',
+          rondaActual: 1,
+          segundosTotales: timerConfig.prep
+        });
+      };
+
+      const handleFormSubmit = (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        setTimeout(() => {
+          const nuevaRutina = generarRutinaLocal(formData);
+          setRutinaActual(nuevaRutina);
+          setLoading(false);
+          setTab('entrenar');
+        }, 800);
+      };
+
+      const iniciarEntrenamiento = (diaIdx) => {
+        setSesionActiva({ diaIdx, ejIdx: 0, serieActual: 1, registros: {}, estado: 'ejercicio' });
+        setTab('entrenar');
       };
 
       return (
         <div className="max-w-md mx-auto p-4 space-y-4">
           
-          {/* Header */}
+          {/* HEADER DE LA APPLICACIÓN */}
           <header className="bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-sm flex justify-between items-center border border-gray-100 dark:border-gray-800">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-blue-400 text-white font-bold rounded-2xl flex items-center justify-center text-lg shadow-md shadow-blue-500/20">
@@ -102,103 +282,248 @@
               onClick={() => setDarkMode(!darkMode)}
               className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center text-base"
             >
-              {darkMode ? '☀️️' : '🌙'}
+              {darkMode ? '☀️' : '🌙'}
             </button>
           </header>
 
-          {/* Menú de Navegación */}
-          <nav className="bg-gray-200/70 dark:bg-gray-800/80 p-1.5 rounded-2xl grid grid-cols-5 gap-1 text-[11px] font-bold">
-            {['generar', 'entrenar', 'feed', 'crear', 'timer'].map(t => (
-              <button 
-                key={t}
-                onClick={() => setTab(t)}
-                className={`py-2 rounded-xl capitalize transition-all text-center ${tab === t ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500'}`}
-              >
-                {t === 'feed' ? 'Social' : t}
-              </button>
-            ))}
+          {/* TABS SUPERIORES TIPO PASTILLA */}
+          <nav className="bg-gray-200/70 dark:bg-gray-800/80 p-1.5 rounded-2xl grid grid-cols-4 gap-1 text-xs font-bold">
+            <button 
+              onClick={() => setTab('generar')}
+              className={`py-2.5 rounded-xl transition-all text-center ${tab === 'generar' ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+            >
+              Generar
+            </button>
+            <button 
+              onClick={() => setTab('entrenar')}
+              className={`py-2.5 rounded-xl transition-all text-center ${tab === 'entrenar' ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+            >
+              Entrenar
+            </button>
+            <button 
+              onClick={() => setTab('crear')}
+              className={`py-2.5 rounded-xl transition-all text-center ${tab === 'crear' ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+            >
+              Crear
+            </button>
+            <button 
+              onClick={() => setTab('timer')}
+              className={`py-2.5 rounded-xl transition-all text-center ${tab === 'timer' ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+            >
+              Timer
+            </button>
           </nav>
 
-          {/* Contenido Principal */}
+          {/* CONTENIDO PRINCIPAL */}
           <main className="bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-800 space-y-5">
-            
-            {/* PESTAÑA SOCIAL / FEED DE INFLUENCERS */}
-            {tab === 'feed' && (
-              <div className="space-y-5">
+            {tab === 'generar' && (
+              <form onSubmit={handleFormSubmit} className="space-y-4">
                 <div>
-                  <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">Comunidad Fitness</h2>
-                  <p className="text-xs text-gray-400">Sigue a tus creadores favoritos y entrena con sus rutinas.</p>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Diseña tu Rutina Inteligente</h2>
+                  <p className="text-xs text-gray-400 font-medium leading-relaxed mt-1">Personalización avanzada adaptada a tu cuerpo y equipo.</p>
                 </div>
 
-                {/* carrusel de influencers recomendados */}
-                <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Creadores Destacados</span>
-                  <div className="flex space-x-3 overflow-x-auto pb-2">
-                    {influencers.map(inf => (
-                      <div key={inf.id} className="min-w-[140px] bg-gray-50 dark:bg-gray-800 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center space-y-2">
-                        <img src={inf.avatar} className="w-12 h-12 rounded-full object-cover" />
-                        <div>
-                          <p className="font-bold text-xs truncate max-w-[110px]">{inf.nombre}</p>
-                          <p className="text-[10px] text-gray-400">{inf.seguidores} seguidores</p>
-                        </div>
-                        <button 
-                          onClick={() => toggleFollow(inf.id)}
-                          className={`w-full py-1.5 rounded-xl text-[10px] font-bold shadow-sm transition-all ${
-                            inf.siguiendo 
-                              ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200' 
-                              : 'bg-blue-600 text-white'
-                          }`}
-                        >
-                          {inf.siguiendo ? 'Siguiendo' : 'Seguir'}
-                        </button>
-                      </div>
-                    ))}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Nombre</label>
+                    <input 
+                      type="text" 
+                      value={formData.nombre}
+                      onChange={e => setFormData({ ...formData, nombre: e.target.value })}
+                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold text-gray-800 dark:text-white focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Género</label>
+                    <select 
+                      value={formData.genero}
+                      onChange={e => setFormData({ ...formData, genero: e.target.value })}
+                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold text-gray-800 dark:text-white focus:outline-none"
+                    >
+                      <option value="Hombre">Hombre</option>
+                      <option value="Mujer">Mujer</option>
+                    </select>
                   </div>
                 </div>
 
-                {/* Feed de publicaciones */}
-                <div className="space-y-4">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Publicaciones Recientes</span>
-                  {posts.map(post => (
-                    <div key={post.id} className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700 space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <img src={post.avatar} className="w-9 h-9 rounded-full object-cover" />
-                        <div>
-                          <p className="font-bold text-xs text-gray-900 dark:text-white">{post.autor}</p>
-                          <p className="text-[10px] text-gray-400">{post.tiempo}</p>
-                        </div>
-                      </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Edad</label>
+                    <input 
+                      type="number" 
+                      value={formData.edad}
+                      onChange={e => setFormData({ ...formData, edad: e.target.value })}
+                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold text-gray-800 dark:text-white focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Estatura (cm)</label>
+                    <input 
+                      type="number" 
+                      value={formData.estatura}
+                      onChange={e => setFormData({ ...formData, estatura: e.target.value })}
+                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold text-gray-800 dark:text-white focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
 
-                      <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
-                        {post.texto}
-                      </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Objetivo</label>
+                    <select 
+                      value={formData.objetivo}
+                      onChange={e => setFormData({ ...formData, objetivo: e.target.value })}
+                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold text-gray-800 dark:text-white focus:outline-none"
+                    >
+                      <option value="Ganar músculo">Ganar músculo</option>
+                      <option value="Perder grasa">Perder grasa</option>
+                      <option value="Fuerza">Fuerza</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Días por semana</label>
+                    <select 
+                      value={formData.dias}
+                      onChange={e => setFormData({ ...formData, dias: e.target.value })}
+                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold text-gray-800 dark:text-white focus:outline-none"
+                    >
+                      <option value="2 días">2 días</option>
+                      <option value="3 días">3 días</option>
+                      <option value="4 días">4 días</option>
+                      <option value="5 días">5 días</option>
+                    </select>
+                  </div>
+                </div>
 
-                      {post.exclusivo && (
-                        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">Contenido VIP de Suscriptores</span>
-                          <button className="px-3 py-1 bg-amber-500 text-white font-bold text-[10px] rounded-lg shadow-sm">
-                            Desbloquear ($4.99/mes)
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Equipo Disponible</label>
+                    <select 
+                      value={formData.equipo}
+                      onChange={e => setFormData({ ...formData, equipo: e.target.value })}
+                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold text-gray-800 dark:text-white focus:outline-none"
+                    >
+                      <option value="Gimnasio completo">Gimnasio completo</option>
+                      <option value="Mancuernas">Mancuernas</option>
+                      <option value="Calistenia">Calistenia</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Duración Sesión</label>
+                    <select 
+                      value={formData.duracion}
+                      onChange={e => setFormData({ ...formData, duracion: e.target.value })}
+                      className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold text-gray-800 dark:text-white focus:outline-none"
+                    >
+                      <option value="45 min">45 min</option>
+                      <option value="60 min">60 min</option>
+                      <option value="90 min">90 min</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Lesiones / Limitaciones</label>
+                  <select 
+                    value={formData.lesiones}
+                    onChange={e => setFormData({ ...formData, lesiones: e.target.value })}
+                    className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold text-gray-800 dark:text-white focus:outline-none"
+                  >
+                    <option value="Espalda baja (Evitar cargas axiales)">Espalda baja (Evitar cargas axiales)</option>
+                    <option value="Rodillas (Evitar gran flexión)">Rodillas (Evitar gran flexión)</option>
+                    <option value="Sin lesiones">Sin lesiones</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 tracking-wider uppercase mb-1">Nivel</label>
+                  <select 
+                    value={formData.nivel}
+                    onChange={e => setFormData({ ...formData, nivel: e.target.value })}
+                    className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-transparent dark:border-gray-700 text-xs font-semibold text-gray-800 dark:text-white focus:outline-none"
+                  >
+                    <option value="Principiante">Principiante</option>
+                    <option value="Intermedio">Intermedio</option>
+                    <option value="Avanzado">Avanzado</option>
+                  </select>
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full py-4 bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 text-white font-black uppercase tracking-wider rounded-2xl text-xs shadow-lg shadow-blue-600/30 active:scale-[0.98] transition-all disabled:opacity-50 mt-2"
+                >
+                  {loading ? 'GENERANDO RUTINA...' : 'GENERAR RUTINA CON IA'}
+                </button>
+              </form>
+            )}
+
+            {tab === 'entrenar' && (
+              <div className="space-y-4">
+                {!rutinaActual ? (
+                  <div className="text-center py-10 text-gray-400 text-xs font-medium">
+                    Aún no has generado ninguna rutina. Ve a la pestaña <span className="font-bold text-blue-600">Generar</span> para crear una.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <h3 className="font-extrabold text-base text-gray-900 dark:text-white">Plan Activo de {rutinaActual.usuario || 'Atleta'}</h3>
+                    {rutinaActual.dias.map((dia, diaIdx) => (
+                      <div key={diaIdx} className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700/50 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-bold text-sm text-blue-600">{dia.nombre}</h4>
+                          <button onClick={() => iniciarEntrenamiento(diaIdx)} className="px-3 py-1.5 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-md">
+                            Entrenar
                           </button>
                         </div>
-                      )}
-
-                      <div className="flex items-center justify-between pt-1 text-[11px] text-gray-400 font-semibold">
-                        <button className="flex items-center space-x-1 hover:text-red-500">
-                          <span>❤️ {post.likes}</span>
-                        </button>
-                        <button className="text-blue-600 font-bold">
-                          Ver Rutina →
-                        </button>
+                        <div className="space-y-2">
+                          {(dia.ejercicios || []).map((ej, ejIdx) => (
+                            <div key={ejIdx} className="bg-white dark:bg-gray-800 p-2.5 rounded-xl border border-gray-100 dark:border-gray-700 text-xs flex justify-between items-center">
+                              <div>
+                                <p className="font-bold text-gray-800 dark:text-gray-100">{ej.nombre}</p>
+                                <p className="text-gray-400 text-[10px]">{ej.series} series × {ej.repsBase || 10} reps</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
-            {tab === 'generar' && (
-              <div className="text-center py-8 text-xs text-gray-400 font-medium">
-                Pestaña de Generador IA Activa. Selecciona <span className="text-blue-600 font-bold">Social</span> para explorar la red de influencers.
+            {tab === 'crear' && (
+              <div className="space-y-4">
+                <h3 className="font-extrabold text-base text-gray-900 dark:text-white">Crear Rutina Personalizada</h3>
+                <input 
+                  type="text" 
+                  value={rutinaEditando.titulo} 
+                  onChange={e => setRutinaEditando({ ...rutinaEditando, titulo: e.target.value })}
+                  className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold" 
+                  placeholder="Título de la rutina" 
+                />
+                <button 
+                  onClick={() => alert('Función de agregar ejercicios personalizada activa')}
+                  className="w-full py-3 border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-400 font-bold rounded-2xl text-xs hover:border-blue-500 hover:text-blue-500 transition-all"
+                >
+                  + Agregar Ejercicio
+                </button>
+              </div>
+            )}
+
+            {tab === 'timer' && (
+              <div className="text-center py-6 space-y-5">
+                <h3 className="font-extrabold text-base text-gray-900 dark:text-white">Timer HIIT / Descanso</h3>
+                <div className="w-44 h-44 rounded-full border-8 border-blue-600 flex flex-col items-center justify-center mx-auto shadow-inner bg-gray-50 dark:bg-gray-800">
+                  <span className="text-[10px] font-black text-gray-400 tracking-wider uppercase">{timerEstado.fase}</span>
+                  <span className="text-4xl font-black text-blue-600 my-1">{timerEstado.segundosTotales}s</span>
+                </div>
+                <button 
+                  onClick={iniciarTimerConfigurable} 
+                  className="px-8 py-3 bg-blue-600 text-white font-bold rounded-2xl text-xs shadow-lg shadow-blue-500/30"
+                >
+                  {timerEstado.corriendo ? "Reiniciar" : "Iniciar Timer"}
+                </button>
               </div>
             )}
           </main>
@@ -207,7 +532,11 @@
     }
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    root.render(
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    );
   </script>
 </body>
 </html>
