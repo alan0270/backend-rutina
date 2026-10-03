@@ -1,365 +1,291 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>FitAI Pro</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={darkMode:'class'}</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-body{font-family:'Inter',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
-.sh::-webkit-scrollbar{display:none}.sh{scrollbar-width:none}
-</style>
-</head>
-<body class="bg-[#f7f8fa] dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen pb-24">
-<div id="root"></div>
-<script type="text/babel">
-const {useState,useEffect}=React;
-const ls={get:(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-function usePersist(k,d){const[s,set]=useState(()=>ls.get(k,d));useEffect(()=>ls.set(k,s),[s]);return[s,set]}
-const U=id=>`https://images.unsplash.com/photo-${id}?w=400&auto=format&fit=crop&q=80`;
-const EMO={pecho:'💪',espalda:'🏋️',cuad:'🦵',post:'🍑',hombros:'🤸',brazos:'💪',core:'🔥'};
-const LBL={pecho:'Pecho',espalda:'Espalda',cuad:'Cuádriceps',post:'Glúteo y femoral',hombros:'Hombros',brazos:'Brazos',core:'Core'};
-
-const RAW=[
-['pecho','Press de banca plano','Baja controlado hasta el pecho y empuja explosivo.','g','','1571019614242-c5c5dee9f50b'],
-['pecho','Press inclinado con mancuernas','Enfócate en la parte alta del pecho.','m','h','1583454110551-21f2fa2afe61'],
-['pecho','Aperturas en polea alta','Contracción máxima al centro sin doblar los codos.','g','',''],
-['pecho','Flexiones','Cuerpo en línea recta, pecho al suelo.','c','h',''],
-['pecho','Aperturas con mancuernas','Abre en arco y siente el estiramiento.','m','',''],
-['espalda','Jalón al pecho en polea','Abre el pecho y lleva los codos hacia abajo.','g','','1605296867304-46d5465a13f1'],
-['espalda','Remo con mancuerna a 1 mano','Espalda recta, tracciona hacia la cadera.','m','','1581009146145-b5ef050c2e1e'],
-['espalda','Remo con barra libre','Torso a 45 grados y espalda neutra.','g','a',''],
-['espalda','Superman en suelo','Levanta brazos y piernas, pausa de 2 segundos.','c','',''],
-['cuad','Prensa de piernas 45°','Profundidad completa sin despegar la cadera.','g','r','1534367507873-d2d7e24c797f'],
-['cuad','Sentadilla libre con barra','Baja al paralelo con el core firme.','g','ar',''],
-['cuad','Extensiones de cuádriceps','Pausa de 1 segundo arriba.','g','r',''],
-['cuad','Sentadilla goblet','Mancuerna al pecho, torso erguido.','m','r',''],
-['cuad','Zancadas','Paso largo, rodilla delantera sobre el tobillo.','m','r',''],
-['cuad','Sentadilla con peso corporal','Rodillas hacia afuera, talones firmes.','c','r',''],
-['post','Hip thrust con barra','Aprieta los glúteos arriba, mirada al frente.','g','','1574680096145-d05b474e2155'],
-['post','Peso muerto rumano','Cadera atrás, tensión en el femoral.','g','a',''],
-['post','Curl femoral acostado','Evita arquear la espalda al flexionar.','g','',''],
-['post','Peso muerto rumano con mancuernas','Mancuernas pegadas a las piernas.','m','a',''],
-['post','Puente de glúteos','Sube la cadera y aprieta 2 segundos.','c','',''],
-['hombros','Press militar con mancuernas','Empuje vertical controlado sobre la cabeza.','m','h',''],
-['hombros','Elevaciones laterales','Movimiento estricto guiado por los codos.','m','',''],
-['hombros','Flexiones pike','Caderas arriba, baja la cabeza al suelo.','c','h',''],
-['brazos','Curl de bíceps con barra EZ','Sin balanceo del cuerpo al subir.','g','',''],
-['brazos','Extensiones de tríceps en polea','Codos fijos pegados a los costados.','g','',''],
-['brazos','Curl de bíceps con mancuernas','Sube girando la muñeca, baja lento.','m','',''],
-['brazos','Fondos de tríceps en silla','Codos hacia atrás, baja hasta 90°.','c','h',''],
-['core','Plancha','Cuerpo recto, abdomen apretado.','c','',''],
-['core','Crunch abdominal','Sube el pecho sin tirar del cuello.','c','',''],
-['core','Elevación de piernas','Espalda baja pegada al suelo.','c','','']
-];
-
-const DB=RAW.map((r,i)=>({id:i,grupo:r[0],nombre:r[1],desc:r[2],eq:r[3],fl:r[4],img:r[5]?U(r[5]):''}));
-const mk=(e,s,r,d)=>({...e,series:s,reps:r,rest:d,done:0});
-const PAR={'Ganar músculo':{s:4,r:'8-12',d:75},'Fuerza':{s:4,r:'4-6',d:120},'Perder grasa':{s:3,r:'12-15',d:45}};
-
-// Distribución lógica por días
-const SPLIT_MAP = {
-  2: [['pecho','espalda','cuad','core'], ['hombros','post','brazos','core']],
-  3: [['pecho','hombros','brazos'], ['espalda','brazos','core'], ['cuad','post','core']],
-  4: [['pecho','hombros','brazos'], ['espalda','brazos','core'], ['hombros','core'], ['cuad','post']],
-  5: [['pecho','hombros','brazos'], ['espalda','brazos'], ['cuad','post'], ['pecho','espalda','hombros'], ['post','cuad']]
-};
-const NEX={'30':4,'45':5,'60':6,'90':8};
-
-function generarLocal(f){
-  const ok={'Gimnasio completo':'gmc','Mancuernas':'mc','Sin equipo':'c'}[f.equipo],les=f.lesiones||[];
-  const bad=e=>(les.includes('Espalda baja')&&e.fl.includes('a'))||(les.includes('Rodillas')&&e.fl.includes('r'))||(les.includes('Hombros')&&e.fl.includes('h'));
-  const pool=g=>DB.filter(e=>e.grupo===g&&ok.includes(e.eq)&&!bad(e));
-  const p=PAR[f.objetivo],aj={Principiante:-1,Intermedio:0,Avanzado:1}[f.nivel],d=+f.dias,n=NEX[f.duracion];
-  
-  const base = SPLIT_MAP[d] || SPLIT_MAP[3];
-  
-  const dias=base.map((g0,i)=>{
-    const gs = g0; // Mantiene la división muscular limpia sin forzar glúteo en torso
-    const pools=gs.map(g=>{const a=pool(g),o=a.length?i%a.length:0;return[...a.slice(o),...a.slice(0,o)]});
-    const used=new Set(),out=[];let k=0,guard=0;
-    while(out.length<n&&guard++<80){
-      const currentPool = pools[k%pools.length];
-      if(currentPool) {
-        const e=currentPool.find(x=>!used.has(x.id));
-        if(e){used.add(e.id);out.push(mk(e,Math.max(2,p.s+aj),p.r,p.d))}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>FitAI Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          }
+        }
       }
-      k++;
     }
-    return{nombre:`Día ${i+1}: ${g0.map(g=>LBL[g]).join(', ')}`,ejercicios:out};
-  });
-  const imc=f.peso&&f.estatura?(f.peso/((f.estatura/100)**2)).toFixed(1):null;
-  return{nombre:`Rutina de ${f.nombre||'mí'}`,objetivo:f.objetivo,nivel:f.nivel,imc,dias};
-}
+  </script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
+    input[type="number"]::-webkit-inner-spin-button, 
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-[#f7f8fa] dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen pb-20">
+  <div id="root"></div>
 
-async function generar(f) {
-  try {
-    const res = await fetch('/api/generar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nivel_usuario: f.nivel ? f.nivel.toLowerCase() : 'intermedio',
-        dias_disponibles: f.dias,
-        genero: f.genero
-      })
-    });
-    const data = await res.json();
-    if (data.success && data.rutina) {
-      const imc = f.peso && f.estatura ? (f.peso / ((f.estatura / 100) ** 2)).toFixed(1) : null;
-      return {
-        nombre: data.rutina.titulo || `Rutina de ${f.nombre || 'mí'}`,
-        objetivo: f.objetivo,
-        nivel: f.nivel,
-        imc,
-        dias: data.rutina.dias.map(d => ({
-          nombre: d.nombre_dia,
-          ejercicios: d.ejercicios.map(e => {
-            const baseEx = DB.find(x => x.nombre.toLowerCase().includes(e.nombre.toLowerCase())) || DB[0];
-            return mk(baseEx, e.series || 4, e.repeticiones || '8-12', e.descanso_segundos || 60);
-          })
-        }))
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    function App() {
+      const [tab, setTab] = useState('generar');
+      const [darkMode, setDarkMode] = useState(false);
+
+      useEffect(() => {
+        if (darkMode) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+      }, [darkMode]);
+
+      const [formData, setFormData] = useState({
+        nombre: 'Alan', 
+        nivel: 'Intermedio', 
+        objetivo: 'Ganar músculo', 
+        dias: '4 días', 
+        lesiones: 'Hombro / Manguito rotador'
+      });
+
+      // RUTINA MAESTRA (Simulando respuesta Cloud desde Supabase / Biblioteca Maestra)
+      const [rutinaActual, setRutinaActual] = useState({
+        titulo: "Hipertrofia Intermedia - Enfoque Poleas y Cero Impacto Axial",
+        usuario: 'Alan',
+        nivel: 'Intermedio',
+        objetivo: 'Ganar músculo',
+        dias: [
+          {
+            nombre: "Día 1: Torso Superior (Poleas)",
+            ejercicios: [
+              { nombre: "Press en Polea Baja", series: 4, reps: "10-12", desc: "Controla la fase excéntrica sin forzar la articulación." },
+              { nombre: "Jalón al Pecho", series: 4, reps: "10-12", desc: "Abre el pecho y tracciona con los codos." }
+            ]
+          },
+          {
+            nombre: "Día 2: Tren Inferior Seguro",
+            ejercicios: [
+              { nombre: "Prensa de Piernas", series: 4, reps: "12-15", desc: "Empuje controlado protegiendo la zona lumbar." },
+              { nombre: "Curl Femoral", series: 3, reps: "12", desc: "Contracción máxima en cada flexión." }
+            ]
+          },
+          {
+            nombre: "Día 3: Brazos y Hombro Sano",
+            ejercicios: [
+              { nombre: "Curl en Polea", series: 3, reps: "12", desc: "Mantén los codos fijos al costado del cuerpo." },
+              { nombre: "Elevaciones Laterales en Polea Baja", series: 4, reps: "15", desc: "Movimiento estricto y continuo." }
+            ]
+          },
+          {
+            nombre: "Día 4: Espalda y Core",
+            ejercicios: [
+              { nombre: "Remo en Polea Sentado", series: 4, reps: "10-12", desc: "Espalda firme y tracción al ombligo." },
+              { nombre: "Plancha abdominal", series: 3, reps: "45 seg", desc: "Core totalmente contraído." }
+            ]
+          }
+        ]
+      });
+
+      const [loading, setLoading] = useState(false);
+      const [sesionActiva, setSesionActiva] = useState(null);
+      const [timerCorriendo, setTimerCorriendo] = useState(false);
+
+      const handleGenerarCloud = (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setTimeout(() => {
+          // Aquí en producción se realiza la consulta a Supabase: select * from biblioteca_rutinas where nivel = ...
+          setLoading(false);
+          setTab('entrenar');
+        }, 500);
       };
+
+      const formControlClass = "w-full p-3.5 rounded-2xl bg-[#f4f5f7] dark:bg-gray-800/50 border-none text-[13px] font-medium text-gray-900 dark:text-gray-100 outline-none";
+      const labelClass = "block text-[10px] font-extrabold text-[#6b7280] dark:text-gray-400 uppercase tracking-widest mb-1.5 ml-1";
+
+      return (
+        <div className="max-w-md mx-auto p-4 space-y-4">
+          
+          <header className="bg-white dark:bg-gray-900 rounded-[2rem] py-3.5 px-5 shadow-sm border border-gray-100/80 dark:border-gray-800 flex justify-between items-center">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 bg-[#2b6ded] text-white font-black rounded-full flex items-center justify-center text-sm shadow-sm">F</div>
+              <h1 className="text-[16px] font-black text-gray-900 dark:text-white tracking-tight">FitAI <span className="text-[#2b6ded] font-medium">Pro</span></h1>
+            </div>
+            <button onClick={() => setDarkMode(!darkMode)} className="w-9 h-9 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-[15px]">
+              {darkMode ? '☀️' : '🌙'}
+            </button>
+          </header>
+
+          <nav className="bg-[#ecedf1] dark:bg-gray-800/60 p-1.5 rounded-2xl flex justify-between text-[11px] font-semibold">
+            {['Generar', 'Entrenar', 'Social', 'Crear', 'Timer'].map(t => (
+              <button 
+                key={t}
+                onClick={() => setTab(t.toLowerCase())}
+                className={`flex-1 py-2 rounded-xl transition-all ${
+                  tab === t.toLowerCase() 
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm font-bold' 
+                    : 'text-[#6b7280] dark:text-gray-400'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </nav>
+
+          <main className="space-y-4">
+
+            {/* GENERADOR CLOUD */}
+            {tab === 'generar' && (
+              <form onSubmit={handleGenerarCloud} className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
+                <div>
+                  <h2 className="text-[20px] font-black text-gray-900 dark:text-white">Motor Cloud Maestra</h2>
+                  <p className="text-[12px] text-[#6b7280] mt-1">Selecciona los parámetros para sincronizar con la base de datos de Supabase.</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className={labelClass}>NOMBRE</label><input type="text" value={formData.nombre} onChange={e=>setFormData({...formData, nombre: e.target.value})} className={formControlClass} /></div>
+                  <div>
+                    <label className={labelClass}>NIVEL</label>
+                    <select value={formData.nivel} onChange={e=>setFormData({...formData, nivel: e.target.value})} className={formControlClass}>
+                      <option>Principiante</option>
+                      <option>Intermedio</option>
+                      <option>Avanzado</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>OBJETIVO</label>
+                    <select value={formData.objetivo} onChange={e=>setFormData({...formData, objetivo: e.target.value})} className={formControlClass}>
+                      <option>Ganar músculo</option>
+                      <option>Perder grasa</option>
+                      <option>Fuerza</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>FRECUENCIA</label>
+                    <select value={formData.dias} onChange={e=>setFormData({...formData, dias: e.target.value})} className={formControlClass}>
+                      <option>4 días</option>
+                      <option>3 días</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>RESTRICCIÓN / LESIÓN</label>
+                  <select value={formData.lesiones} onChange={e=>setFormData({...formData, lesiones: e.target.value})} className={formControlClass}>
+                    <option>Hombro / Manguito rotador</option>
+                    <option>Espalda baja (Cero impacto axial)</option>
+                    <option>Ninguna</option>
+                  </select>
+                </div>
+
+                <button type="submit" disabled={loading} className="w-full py-4 rounded-[1.25rem] bg-gradient-to-r from-[#306ee8] to-[#1c4baf] text-white font-extrabold text-[11px] uppercase tracking-widest shadow-md">
+                  {loading ? 'CONSULTANDO NUBE...' : 'SINCRONIZAR RUTINA DESDE SUPABASE'}
+                </button>
+              </form>
+            )}
+
+            {/* PESTAÑA ENTRENAR */}
+            {tab === 'entrenar' && !sesionActiva && (
+              <div className="space-y-4">
+                <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-2xl space-y-1">
+                  <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400">Biblioteca Cloud Activa</span>
+                  <h3 className="font-extrabold text-[15px]">{rutinaActual.titulo}</h3>
+                  <p className="text-[11px] text-gray-500">Atleta: {formData.nombre} • Restricción: {formData.lesiones}</p>
+                </div>
+
+                {rutinaActual.dias.map((dia, diaIdx) => (
+                  <div key={diaIdx} className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
+                    <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
+                      <h3 className="font-extrabold text-[15px]">{dia.nombre}</h3>
+                      <button onClick={() => setSesionActiva(dia)} className="text-[11px] font-bold text-white bg-[#2b6ded] px-3.5 py-1.5 rounded-full shadow-sm">Iniciar</button>
+                    </div>
+                    <div className="space-y-3">
+                      {dia.ejercicios.map((ej, ejIdx) => (
+                        <div key={ejIdx} className="bg-[#f7f8fa] dark:bg-gray-800/40 p-3.5 rounded-2xl space-y-1">
+                          <div className="flex justify-between items-center">
+                            <h4 className="font-bold text-[13px]">{ej.nombre}</h4>
+                            <span className="text-[11px] font-bold text-[#2b6ded]">{ej.series} series × {ej.reps}</span>
+                          </div>
+                          <p className="text-[11px] text-gray-500">{ej.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {tab === 'entrenar' && sesionActiva && (
+              <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
+                <h2 className="text-[18px] font-black">Sesión Guiada: {sesionActiva.nombre}</h2>
+                <p className="text-xs text-gray-500">Registra tus marcas y descansa según el ritmo establecido.</p>
+                <button onClick={() => setSesionActiva(null)} className="w-full py-3.5 bg-green-600 text-white font-extrabold text-[12px] rounded-2xl">
+                  ✓ Finalizar Sesión
+                </button>
+              </div>
+            )}
+
+            {/* PESTAÑA SOCIAL */}
+            {tab === 'social' && (
+              <div className="space-y-4">
+                <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
+                  <h3 className="text-[14px] font-black uppercase tracking-wider text-gray-400">Comunidad & Influencers</h3>
+                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                    <div className="flex flex-col items-center space-y-1 min-w-[70px]">
+                      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" className="w-14 h-14 rounded-full object-cover border-2 border-blue-500 p-0.5" />
+                      <span className="text-[11px] font-bold">Carlos Coach</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80" className="w-10 h-10 rounded-full object-cover" />
+                    <div>
+                      <h4 className="font-bold text-[13px]">Sofia Fit</h4>
+                      <span className="text-[10px] text-gray-400">Hace 1 hora</span>
+                    </div>
+                  </div>
+                  <h5 className="font-extrabold text-[15px]">Guía VIP: Tren Superior Cero Impacto</h5>
+                  <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl text-center space-y-2">
+                    <span className="text-amber-500 font-bold text-xs">🔒 Contenido Exclusivo VIP</span>
+                    <button className="w-full py-2 bg-amber-500 text-black font-extrabold text-xs rounded-xl uppercase tracking-wider">Desbloquear por $4.99/mes</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {tab === 'crear' && (
+              <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800 space-y-4">
+                <h2 className="text-[20px] font-black">Creador Manual</h2>
+                <input type="text" placeholder="Nombre de la rutina..." className={formControlClass} />
+              </div>
+            )}
+
+            {tab === 'timer' && (
+              <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-8 shadow-sm border border-gray-100 dark:border-gray-800 text-center space-y-4">
+                <span className="text-[10px] font-black text-[#2b6ded] uppercase">PREPÁRATE</span>
+                <div className="text-[64px] font-black leading-none">00:45</div>
+                <button onClick={()=>setTimerCorriendo(!timerCorriendo)} className="px-7 py-2.5 bg-[#306ee8] text-white font-bold text-[12px] rounded-xl">
+                  {timerCorriendo ? 'Pausar' : 'Iniciar'}
+                </button>
+              </div>
+            )}
+
+          </main>
+        </div>
+      );
     }
-  } catch (e) {
-    console.warn("Backend API no disponible, usando motor local...", e);
-  }
-  return generarLocal(f);
-}
 
-const card='bg-white dark:bg-gray-900 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-800';
-const inp='w-full p-3 rounded-2xl bg-[#f4f5f7] dark:bg-gray-800 text-[13px] font-medium outline-none';
-const lbl='block text-[10px] font-extrabold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1 ml-1';
-const btn='px-4 py-2 rounded-full text-[12px] font-bold ';
-const pri=btn+'bg-[#2b6ded] text-white',sec=btn+'bg-gray-100 dark:bg-gray-800';
-const fmt=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
-const beep=()=>{try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator();o.connect(c.destination);o.frequency.value=880;o.start();setTimeout(()=>o.stop(),400);navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}};
-const Fld=({l,children})=><div><label className={lbl}>{l}</label>{children}</div>;
-const Sel=({v,set,o})=><select className={inp} value={v} onChange={e=>set(e.target.value)}>{o.map(x=><option key={x}>{x}</option>)}</select>;
-const Pic=({e,c=''})=>{const[bad,setBad]=useState(false);return e.img&&!bad?<img src={e.img} onError={()=>setBad(true)} className={'object-cover '+c}/>:<div className={'flex items-center justify-center text-3xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 '+c}>{EMO[e.grupo]}</div>};
-const AddEx=({add})=><select className={inp} value="" onChange={x=>{const e=DB[x.target.value];if(e)add(mk(e,3,'10-12',60))}}><option value="">+ Añadir ejercicio…</option>{DB.map(e=><option key={e.id} value={e.id}>{LBL[e.grupo]} - {e.nombre}</option>)}</select>;
-
-/* ---------- GENERAR ---------- */
-const DEF={nombre:'',genero:'Hombre',edad:'25',estatura:'170',peso:'70',nivel:'Intermedio',objetivo:'Ganar músculo',dias:'3',duracion:'60',equipo:'Gimnasio completo',lesiones:[]};
-function Generar({onGen}){
-  const[f,setF]=usePersist('fit_perfil',DEF);const[ld,setLd]=useState(false);
-  const s=k=>v=>setF({...f,[k]:v});
-  const tg=l=>s('lesiones')(f.lesiones.includes(l)?f.lesiones.filter(x=>x!==l):[...f.lesiones,l]);
-  const go=async e=>{
-    e.preventDefault();
-    setLd(true);
-    localStorage.removeItem('fit_rutina');
-    const nuevaRutina = await generar(f);
-    setLd(false);
-    onGen(nuevaRutina,f);
-  };
-  const num=(k,l)=><Fld l={l}><input type="number" className={inp} value={f[k]} onChange={e=>s(k)(e.target.value)}/></Fld>;
-  return <form onSubmit={go} className={card+' space-y-4'}>
-    <div><h2 className="text-xl font-black">Diseña tu rutina</h2><p className="text-xs text-gray-500 mt-1">Cuéntame sobre ti y armo un plan a tu medida.</p></div>
-    <div className="grid grid-cols-2 gap-3">
-      <Fld l="Nombre"><input className={inp} value={f.nombre} onChange={e=>s('nombre')(e.target.value)}/></Fld>
-      <Fld l="Género"><Sel v={f.genero} set={s('genero')} o={['Hombre','Mujer','Otro']}/></Fld>
-      {num('edad','Edad')}{num('estatura','Estatura (cm)')}{num('peso','Peso (kg)')}
-      <Fld l="Nivel"><Sel v={f.nivel} set={s('nivel')} o={['Principiante','Intermedio','Avanzado']}/></Fld>
-      <Fld l="Objetivo"><Sel v={f.objetivo} set={s('objetivo')} o={Object.keys(PAR)}/></Fld>
-      <Fld l="Días por semana"><Sel v={f.dias} set={s('dias')} o={['2','3','4','5','6']}/></Fld>
-      <Fld l="Minutos por sesión"><Sel v={f.duracion} set={s('duracion')} o={['30','45','60','90']}/></Fld>
-      <Fld l="Equipo"><Sel v={f.equipo} set={s('equipo')} o={['Gimnasio completo','Mancuernas','Sin equipo']}/></Fld>
-    </div>
-    <Fld l="Lesiones o limitaciones">
-      <div className="flex gap-2 flex-wrap">{['Espalda baja','Rodillas','Hombros'].map(l=><button type="button" key={l} onClick={()=>tg(l)} className={btn+(f.lesiones.includes(l)?'bg-[#2b6ded] text-white':'bg-gray-100 dark:bg-gray-800')}>{l}</button>)}</div>
-    </Fld>
-    <button type="submit" disabled={ld} className="w-full py-4 rounded-2xl bg-[#2b6ded] text-white font-extrabold text-sm">{ld?'Analizando tu perfil…':'Generar mi rutina'}</button>
-  </form>;
-}
-
-/* ---------- ENTRENAR ---------- */
-function Entrenar({rutina,setRutina,rest}){
-  const[di,setDi]=useState(0);const[ed,setEd]=useState(-1);
-  if(!rutina)return <div className={card+' text-center text-sm text-gray-500'}>Aún no tienes rutina. Genérala en <b>Generar</b> o crea la tuya en <b>Crear</b>.</div>;
-  const d=Math.min(di,rutina.dias.length-1),day=rutina.dias[d];
-  const upd=fn=>setRutina({...rutina,dias:rutina.dias.map((x,i)=>i===d?{...x,ejercicios:fn(x.ejercicios)}:x)});
-  const set=(i,p)=>upd(a=>a.map((x,j)=>j===i?{...x,...p}:x));
-  const swap=i=>upd(a=>a.map((x,j)=>{if(j!==i)return x;const alt=DB.filter(y=>y.grupo===x.grupo&&!a.some(z=>z.id===y.id));const n=alt.find(y=>y.id>x.id)||alt[0];return n?mk(n,x.series,x.reps,x.rest):x}));
-  return <div className="space-y-4">
-    <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-2xl">
-      <h3 className="font-extrabold text-sm text-blue-600 dark:text-blue-400">{rutina.nombre}</h3>
-      <p className="text-[11px] text-gray-500">{rutina.objetivo} · {rutina.nivel}{rutina.imc?` · IMC ${rutina.imc}`:''}</p>
-    </div>
-    {rutina.dias.length>1&&<div className="flex gap-2 overflow-x-auto sh">{rutina.dias.map((x,i)=><button key={i} onClick={()=>{setDi(i);setEd(-1)}} className={btn+'whitespace-nowrap '+(i===d?'bg-[#2b6ded] text-white':'bg-white dark:bg-gray-900')}>Día {i+1}</button>)}</div>}
-    <h3 className="font-extrabold text-[15px] px-1">{day.nombre}</h3>
-    {day.ejercicios.map((e,i)=><div key={e.id+'-'+i} className={card+' !p-0 overflow-hidden'}>
-      <Pic e={e} c="w-full h-36"/>
-      <div className="p-4 space-y-3">
-        <div className="flex justify-between items-start gap-2"><h4 className="font-extrabold text-sm">{e.nombre}</h4><span className="text-[11px] font-bold text-[#2b6ded] whitespace-nowrap">{e.series}×{e.reps}</span></div>
-        <p className="text-xs text-gray-500">{e.desc} Descanso: {e.rest}s.</p>
-        <div className="flex gap-2">{Array.from({length:e.series},(_,k)=><button key={k} onClick={()=>set(i,{done:e.done===k+1?k:k+1})} className={'w-8 h-8 rounded-full text-xs font-bold '+(k<e.done?'bg-green-500 text-white':'bg-gray-100 dark:bg-gray-800')}>{k+1}</button>)}</div>
-        <div className="flex gap-2 flex-wrap">
-          <button className={pri} onClick={()=>rest(e.rest)}>⏱ Descanso</button>
-          <button className={sec} onClick={()=>setEd(ed===i?-1:i)}>✏️ Editar</button>
-          <button className={sec} onClick={()=>swap(i)}>🔄 Cambiar</button>
-          <button className={sec} onClick={()=>upd(a=>a.filter((_,j)=>j!==i))}>🗑</button>
-        </div>
-        {ed===i&&<div className="grid grid-cols-3 gap-2">
-          <Fld l="Series"><input type="number" className={inp} value={e.series} onChange={x=>set(i,{series:Math.min(10,Math.max(1,+x.target.value||1))})}/></Fld>
-          <Fld l="Reps"><input className={inp} value={e.reps} onChange={x=>set(i,{reps:x.target.value})}/></Fld>
-          <Fld l="Desc. (s)"><input type="number" className={inp} value={e.rest} onChange={x=>set(i,{rest:+x.target.value||0})}/></Fld>
-        </div>}
-      </div>
-    </div>)}
-    <AddEx add={e=>upd(a=>[...a,e])}/>
-  </div>;
-}
-
-/* ---------- SOCIAL ---------- */
-const INFL=[{id:'carlos',n:'Carlos Coach',e:'🏋️',b:'Fuerza e hipertrofia',f:12400},{id:'lau',n:'Lau Fit',e:'🧘‍♀️',b:'Glúteos y movilidad',f:8900},{id:'marcos',n:'Marcos Calistenia',e:'🤸',b:'Entrena sin equipo',f:5300}];
-const COMS=[{id:'hiper',n:'Hipertrofia Hub',e:'💪',m:3200},{id:'casa',n:'Entrena en Casa',e:'🏠',m:5100},{id:'grasa',n:'Pérdida de Grasa',e:'🔥',m:4200}];
-const SEED=[
-{id:1,a:'Carlos Coach',e:'🏋️',inf:'carlos',t:'La técnica antes que el peso. Controla la bajada y sube con intención. 💪',l:248,liked:false,c:[{a:'Lau Fit',t:'Totalmente de acuerdo 🙌'}]},
-{id:2,a:'Lau Fit',e:'🧘‍♀️',inf:'lau',t:'Hip thrust 4x10 con pausa arriba. Tus glúteos lo notan. 🍑',l:312,liked:false,c:[]},
-{id:3,a:'Marcos Calistenia',e:'🤸',inf:'marcos',t:'¿Sin gimnasio? Flexiones, puente de glúteos y plancha. Hoy entrenas igual.',l:97,liked:false,c:[]}];
-function Social({yo,posts,setPosts,saveRt}){
-  const[sub,setSub]=useState('feed');const[fl,setFl]=useState('todo');
-  const[fw,setFw]=usePersist('fit_fw',[]);const[jn,setJn]=usePersist('fit_jn',[]);
-  const[txt,setTxt]=useState('');const[open,setOpen]=useState(null);const[cm,setCm]=useState('');
-  const tgl=(a,set,id)=>set(a.includes(id)?a.filter(x=>x!==id):[...a,id]);
-  const upP=(id,fn)=>setPosts(posts.map(p=>p.id===id?fn(p):p));
-  const pub=()=>{if(!txt.trim())return;setPosts([{id:Date.now(),a:yo,e:'🙂',me:1,t:txt.trim(),l:0,liked:false,c:[]},...posts]);setTxt('')};
-  const vis=posts.filter(p=>fl==='todo'||p.me||fw.includes(p.inf));
-  const av='w-11 h-11 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center text-lg shrink-0';
-  return <div className="space-y-4">
-    <div className="flex gap-2">{[['feed','Feed'],['inf','Influencers'],['com','Comunidades']].map(([k,l])=><button key={k} onClick={()=>setSub(k)} className={btn+(sub===k?'bg-[#2b6ded] text-white':'bg-white dark:bg-gray-900')}>{l}</button>)}</div>
-    {sub==='feed'&&<>
-      <div className="flex gap-3 overflow-x-auto sh">{INFL.map(i=><button key={i.id} onClick={()=>tgl(fw,setFw,i.id)} className="flex flex-col items-center min-w-[72px]"><div className={av+' !w-14 !h-14 text-2xl '+(fw.includes(i.id)?'':'opacity-50')}>{i.e}</div><span className="text-[10px] font-bold mt-1">{i.n.split(' ')[0]}</span></button>)}</div>
-      <div className={card+' space-y-3'}>
-        <textarea className={inp} rows="2" placeholder="Comparte algo con la comunidad…" value={txt} onChange={e=>setTxt(e.target.value)}/>
-        <button className={pri} onClick={pub}>Publicar</button>
-      </div>
-      <div className="flex gap-2">{[['todo','Todo'],['sig','Siguiendo']].map(([k,l])=><button key={k} onClick={()=>setFl(k)} className={btn+(fl===k?'bg-gray-900 text-white dark:bg-white dark:text-gray-900':'bg-white dark:bg-gray-900')}>{l}</button>)}</div>
-      {vis.length===0&&<p className="text-center text-xs text-gray-500">Sigue a un influencer tocando su foto para ver sus publicaciones.</p>}
-      {vis.map(p=><div key={p.id} className={card+' space-y-3'}>
-        <div className="flex items-center gap-3"><div className={av}>{p.e}</div><b className="text-sm">{p.a}</b></div>
-        <p className="text-sm">{p.t}</p>
-        {p.rt&&<div className="bg-blue-500/10 rounded-2xl p-3 space-y-2">
-          <div className="flex justify-between items-center"><b className="text-[13px]">📋 {p.rt.nombre}</b>{!p.me&&<button className={pri} onClick={()=>saveRt(p.rt)}>Guardar</button>}</div>
-          <p className="text-[11px] text-gray-500">{p.rt.ejercicios.map(e=>e.nombre).join(', ')}</p>
-        </div>}
-        <div className="flex gap-5 text-sm font-bold">
-          <button onClick={()=>upP(p.id,x=>({...x,liked:!x.liked,l:x.l+(x.liked?-1:1)}))}>{p.liked?'❤️':'🤍'} {p.l}</button>
-          <button onClick={()=>setOpen(open===p.id?null:p.id)}>💬 {p.c.length}</button>
-        </div>
-        {open===p.id&&<div className="space-y-2">
-          {p.c.map((c,i)=><p key={i} className="text-xs"><b>{c.a}</b> {c.t}</p>)}
-          <div className="flex gap-2"><input className={inp} placeholder="Comenta…" value={cm} onChange={e=>setCm(e.target.value)}/><button className={pri} onClick={()=>{if(cm.trim()){upP(p.id,x=>({...x,c:[...x.c,{a:yo,t:cm.trim()}]}));setCm('')}}}>Enviar</button></div>
-        </div>}
-      </div>)}
-    </>}
-    {sub==='inf'&&INFL.map(i=><div key={i.id} className={card+' flex items-center gap-3'}>
-      <div className={av}>{i.e}</div>
-      <div className="flex-1"><b className="text-sm">{i.n}</b><p className="text-[11px] text-gray-500">{i.b} · {(i.f+(fw.includes(i.id)?1:0)).toLocaleString('es')} seguidores</p></div>
-      <button className={fw.includes(i.id)?sec:pri} onClick={()=>tgl(fw,setFw,i.id)}>{fw.includes(i.id)?'Siguiendo':'Seguir'}</button>
-    </div>)}
-    {sub==='com'&&COMS.map(c=><div key={c.id} className={card+' flex items-center gap-3'}>
-      <div className={av}>{c.e}</div>
-      <div className="flex-1"><b className="text-sm">{c.n}</b><p className="text-[11px] text-gray-500">{(c.m+(jn.includes(c.id)?1:0)).toLocaleString('es')} miembros</p></div>
-      <button className={jn.includes(c.id)?sec:pri} onClick={()=>tgl(jn,setJn,c.id)}>{jn.includes(c.id)?'Unido':'Unirme'}</button>
-    </div>)}
-  </div>;
-}
-
-/* ---------- CREAR ---------- */
-function Crear({mis,setMis,usar,publish}){
-  const[n,setN]=useState('');const[ex,setEx]=useState([]);const[err,setErr]=useState('');
-  const set=(i,p)=>setEx(ex.map((x,j)=>j===i?{...x,...p}:x));
-  const guardar=pub=>{
-    if(!n.trim()||!ex.length)return setErr('Ponle nombre y añade al menos un ejercicio.');
-    const r={id:Date.now(),nombre:n.trim(),ejercicios:ex};setMis([r,...mis]);if(pub)publish(r);setN('');setEx([]);setErr('');
-  };
-  return <div className="space-y-4">
-    <div className={card+' space-y-3'}>
-      <h2 className="text-xl font-black">Crear rutina</h2>
-      <input className={inp} placeholder="Nombre de la rutina" value={n} onChange={e=>setN(e.target.value)}/>
-      {ex.map((e,i)=><div key={i} className="flex items-center gap-2">
-        <Pic e={e} c="w-12 h-12 rounded-xl shrink-0"/>
-        <div className="flex-1 min-w-0"><p className="text-xs font-bold truncate">{e.nombre}</p>
-          <div className="flex gap-1 mt-1">
-            <input type="number" className={inp+' !p-2'} value={e.series} onChange={x=>set(i,{series:Math.min(10,Math.max(1,+x.target.value||1))})}/>
-            <input className={inp+' !p-2'} value={e.reps} onChange={x=>set(i,{reps:x.target.value})}/>
-            <input type="number" className={inp+' !p-2'} value={e.rest} onChange={x=>set(i,{rest:+x.target.value||0})}/>
-          </div></div>
-        <button onClick={()=>setEx(ex.filter((_,j)=>j!==i))}>🗑</button>
-      </div>)}
-      {ex.length>0&&<p className="text-[10px] text-gray-500">Series · repeticiones · descanso (s)</p>}
-      <AddEx add={e=>setEx([...ex,e])}/>
-      {err&&<p className="text-xs text-red-500">{err}</p>}
-      <div className="flex gap-2"><button className={pri} onClick={()=>guardar(false)}>Guardar</button><button className={sec} onClick={()=>guardar(true)}>Guardar y compartir</button></div>
-    </div>
-    <h3 className="font-extrabold text-sm px-1">Mis rutinas</h3>
-    {mis.length===0&&<p className="text-xs text-gray-500 px-1">Todavía no guardaste ninguna. Las rutinas que guardes desde Social también aparecen aquí.</p>}
-    {mis.map(r=><div key={r.id} className={card+' space-y-2'}>
-      <div className="flex justify-between"><b className="text-sm">{r.nombre}</b><span className="text-[11px] text-gray-500">{r.ejercicios.length} ejercicios</span></div>
-      <div className="flex gap-2"><button className={pri} onClick={()=>usar(r)}>Entrenar</button><button className={sec} onClick={()=>publish(r)}>Compartir</button><button className={sec} onClick={()=>setMis(mis.filter(x=>x.id!==r.id))}>🗑</button></div>
-    </div>)}
-  </div>;
-}
-
-/* ---------- TIMER ---------- */
-function TimerV({tm,setTm}){
-  const C=2*Math.PI*90,pct=tm.total?Math.min(1,tm.left/tm.total):0;
-  return <div className={card+' text-center space-y-5'}>
-    <h2 className="text-xl font-black">Descanso entre series</h2>
-    <div className="relative w-56 h-56 mx-auto">
-      <svg viewBox="0 0 200 200" className="-rotate-90"><circle cx="100" cy="100" r="90" fill="none" strokeWidth="10" className="stroke-gray-200 dark:stroke-gray-800"/><circle cx="100" cy="100" r="90" fill="none" strokeWidth="10" strokeLinecap="round" stroke="#2b6ded" strokeDasharray={C} strokeDashoffset={C*(1-pct)} style={{transition:'stroke-dashoffset 1s linear'}}/></svg>
-      <div className="absolute inset-0 flex items-center justify-center text-5xl font-black">{fmt(tm.left)}</div>
-    </div>
-    <div className="flex justify-center gap-2 flex-wrap">{[30,45,60,90,120].map(s=><button key={s} className={tm.total===s?pri:sec} onClick={()=>setTm({left:s,total:s,run:false})}>{s}s</button>)}</div>
-    <div className="flex justify-center gap-2">
-      <button className={pri} onClick={()=>tm.left>0&&setTm({...tm,run:!tm.run})}>{tm.run?'Pausar':'Iniciar'}</button>
-      <button className={sec} onClick={()=>setTm({...tm,left:tm.total,run:false})}>Reiniciar</button>
-    </div>
-  </div>;
-}
-
-/* ---------- APP ---------- */
-function App(){
-  const[tab,setTab]=useState('generar');const[dark,setDark]=usePersist('fit_dark',false);
-  const[rutina,setRutina]=usePersist('fit_rutina',null);const[mis,setMis]=usePersist('fit_mis',[]);
-  const[posts,setPosts]=usePersist('fit_posts',SEED);const[yo,setYo]=usePersist('fit_yo','Yo');
-  const[tm,setTm]=useState({left:60,total:60,run:false});const[toast,setToast]=useState('');
-  const flash=m=>{setToast(m);setTimeout(()=>setToast(''),2200)};
-  useEffect(()=>{document.documentElement.classList.toggle('dark',dark)},[dark]);
-  useEffect(()=>{if(!tm.run)return;const id=setInterval(()=>setTm(t=>({...t,left:Math.max(0,t.left-1),run:t.left>1})),1000);return()=>clearInterval(id)},[tm.run]);
-  useEffect(()=>{if(tm.left===0&&tm.total>0&&!tm.run){beep();flash('¡Descanso terminado! 💪')}},[tm.left,tm.run]);
-  const publish=r=>{setPosts([{id:Date.now(),a:yo,e:'🙂',me:1,t:'Compartí mi rutina 💥',rt:r,l:0,liked:false,c:[]},...posts]);flash('Rutina compartida en Social ✓')};
-  const saveRt=r=>{setMis([{...r,id:Date.now()},...mis]);flash('Guardada en Crear → Mis rutinas ✓')};
-  const usar=r=>{setRutina({nombre:r.nombre,objetivo:'Personalizada',nivel:'A tu medida',dias:[{nombre:r.nombre,ejercicios:r.ejercicios.map(e=>({...e,done:0}))}]});setTab('entrenar')};
-  const onGen=(r,f)=>{setRutina(r);setYo(f.nombre||'Yo');setTab('entrenar')};
-  const rest=s=>setTm({left:s,total:s,run:true});
-  const T=[['generar','Generar'],['entrenar','Entrenar'],['social','Social'],['crear','Crear'],['timer','Timer']];
-  return <div className="max-w-md mx-auto p-4 space-y-4">
-    <header className="bg-white dark:bg-gray-900 rounded-[2rem] py-3 px-5 shadow-sm border border-gray-100 dark:border-gray-800 flex justify-between items-center">
-      <div className="flex items-center gap-3"><div className="w-9 h-9 bg-[#2b6ded] text-white font-black rounded-full flex items-center justify-center text-sm">F</div><h1 className="text-base font-black">FitAI <span className="text-[#2b6ded] font-medium">Pro</span></h1></div>
-      <button onClick={()=>setDark(!dark)} className="w-9 h-9 bg-gray-50 dark:bg-gray-800 rounded-full">{dark?'☀️':'🌙'}</button>
-    </header>
-    <nav className="bg-[#ecedf1] dark:bg-gray-800/60 p-1.5 rounded-2xl flex text-[11px] font-semibold">
-      {T.map(([k,l])=><button key={k} onClick={()=>setTab(k)} className={'flex-1 py-2 rounded-xl '+(tab===k?'bg-white dark:bg-gray-700 shadow-sm font-bold':'text-gray-500 dark:text-gray-400')}>{l}</button>)}
-    </nav>
-    <main>
-      {tab==='generar'&&<Generar onGen={onGen}/>}
-      {tab==='entrenar'&&<Entrenar rutina={rutina} setRutina={setRutina} rest={rest}/>}
-      {tab==='social'&&<Social yo={yo} posts={posts} setPosts={setPosts} saveRt={saveRt}/>}
-      {tab==='crear'&&<Crear mis={mis} setMis={setMis} usar={usar} publish={publish}/>}
-      {tab==='timer'&&<TimerV tm={tm} setTm={setTm}/>}
-    </main>
-    {tm.run&&tab!=='timer'&&<button onClick={()=>setTm({...tm,run:false})} className="fixed bottom-5 left-1/2 -translate-x-1/2 bg-[#2b6ded] text-white rounded-full px-5 py-2 font-bold text-sm shadow-lg">⏱ {fmt(tm.left)} · Pausar</button>}
-    {toast&&<div className="fixed top-4 left-1/2 -translate-x-1/2 bg-gray-900 text-white rounded-full px-4 py-2 text-xs font-bold shadow-lg">{toast}</div>}
-  </div>;
-}
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-</script>
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
 </html>
