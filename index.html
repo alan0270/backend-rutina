@@ -36,43 +36,78 @@
         else document.documentElement.classList.remove('dark');
       }, [darkMode]);
 
-      // Parámetros avanzados y detallados
       const [formData, setFormData] = useState({
         nombre: 'Atleta Pro',
-        genero: 'Mujer',
+        genero: 'Hombre',
         nivel: 'Avanzado',
         objetivo: 'Hipertrofia Extrema & Tonificación',
-        dia: 'Lunes',
-        enfoque: 'Dominancia Cuádriceps & Tensión Glúteos',
-        descansoEntreSeries: '90 segundos',
-        restriccion: 'Ninguna'
+        dia: 'Martes',
+        descansoEntreSeries: '90 segundos'
       });
 
-      const [rutinaActual, setRutinaActual] = useState({
-        titulo: "Programa Avanzado de Hipertrofia & Fuerza",
-        bloques: [
-          {
-            bloque: "Lunes - Bloque 1: Dominancia Cuádriceps",
-            ejercicios: [
-              { nombre: "Extensión de cuádriceps", series: "4 series (30/20/15/15)", desc: "Pirámide ascendente de carga. Sube peso. 1s de pausa isométrica arriba." },
-              { nombre: "Prensa inclinada", series: "4 x 15 reps + 10s isometría", desc: "Al acabar la rep 15, sostén la carga a la mitad (90°) durante 10s continuos." },
-              { nombre: "Sentadilla Hack", series: "4 x 15 reps + 10s isometría", desc: "Rango profundo. Sostén la tensión al centro del recorrido 10s al finalizar." },
-              { nombre: "Estocadas caminadas", series: "4 x 12 reps (por pierna)", desc: "Torso con ligera inclinación para enfocar el esfuerzo en el cuádriceps." },
-              { nombre: "Sentadilla libre AyC", series: "4 x 15 reps (Lentas)", desc: "Ritmo muy lento alternando postura Abierta y Cerrada (AyC)." }
-            ]
-          },
-          {
-            bloque: "Lunes - Bloque 2: Tensión Glúteos",
-            ejercicios: [
-              { nombre: "Empuje de cadera (Barra)", series: "4 x (10 + 10s + 10)", desc: "10 reps intensas + 10s isometría arriba apretando + 10 reps de remate." },
-              { nombre: "Sentadilla Sumo (Mancuerna)", series: "4 x (10/15/20)", desc: "Pirámide descendente: Empieza con máximo peso a 10 reps y sube repeticiones bajando carga." },
-              { nombre: "Patada de glúteo Tri-Serie", series: "4 x (15+15+15)", desc: "Sin descanso: 15 posteriores + 15 laterales + 15 diagonales por pierna." },
-              { nombre: "Sentadilla con banda elástica", series: "4 x 30 reps + Desplazamiento", desc: "15 con peso + 15 sin peso + desplazamientos laterales al fallo." }
-            ]
-          }
-        ]
-      });
+      // Base de datos local integrada para asegurar correspondencia exacta de género y día
+      const baseDeDatosRutinas = [
+        {
+          titulo: "Programa Avanzado de Hipertrofia & Fuerza - Hombre",
+          genero: "Hombre",
+          dia: "Lunes",
+          bloques: [
+            {
+              bloque: "Lunes - Bloque 1: Trabajo de Pectorales",
+              ejercicios: [
+                { nombre: "Press Banco Plano", series: "1x30 + 4x15 reps", desc: "1 serie de aproximación de 30 reps + 4 efectivas. Controla bajada en 2s[span_0](start_span)[span_0](end_span)." },
+                { nombre: "Press Banco Inclinado", series: "4 x 15 reps", desc: "Banco a 30°-45°. Descenso controlado rozando el pecho alto[span_1](start_span)[span_1](end_span)." },
+                { nombre: "Biserie: Apertura Inclinada + Flexiones", series: "4 x 15 + Fallo", desc: "15 aperturas con mancuernas seguidas de flexiones al fallo muscular[span_2](start_span)[span_2](end_span)." }
+              ]
+            },
+            {
+              bloque: "Lunes - Bloque 2: Hombros y Tríceps",
+              ejercicios: [
+                { nombre: "Press Militar", series: "4 x 15 reps", desc: "Empuje vertical estricto con abdomen contraído[span_3](start_span)[span_3](end_span)." },
+                { nombre: "Tríceps con Soga en Polea", series: "4 x 15 reps", desc: "Extensión completa abriendo la soga al final[span_4](start_span)[span_4](end_span)." }
+              ]
+            }
+          ]
+        },
+        {
+          titulo: "Programa Avanzado de Hipertrofia & Fuerza - Hombre",
+          genero: "Hombre",
+          dia: "Martes",
+          bloques: [
+            {
+              bloque: "Martes - Bloque 1: Espalda & Tracción",
+              ejercicios: [
+                { nombre: "Jalón al Pecho (Barra Recta)", series: "1x30 + 4x15 reps", desc: "Agarre ancho prono. Lleva la barra al esternón[span_5](start_span)[span_5](end_span)." },
+                { nombre: "Remo en Máquina con Triángulo", series: "4 x 12 reps", desc: "Apoya el pecho firmemente contra el cojín[span_6](start_span)[span_6](end_span)." },
+                { nombre: "Remo Unilateral con Mancuerna", series: "4 x 15 reps (p/lado)", desc: "Tracción en trayectoria diagonal hacia la cadera[span_7](start_span)[span_7](end_span)." }
+              ]
+            },
+            {
+              bloque: "Martes - Bloque 2: Hombros y Bíceps",
+              ejercicios: [
+                { nombre: "Vuelos Laterales con Mancuerna", series: "4 x 15 reps", desc: "Elevación estricta controlando subida y bajada[span_8](start_span)[span_8](end_span)." },
+                { nombre: "Bíceps Alternado con Supinación", series: "4 x 15 reps", desc: "Gira la muñeca activamente al subir[span_9](start_span)[span_9](end_span)." }
+              ]
+            }
+          ]
+        },
+        {
+          titulo: "Programa Avanzado de Hipertrofia & Fuerza - Mujer",
+          genero: "Mujer",
+          dia: "Lunes",
+          bloques: [
+            {
+              bloque: "Lunes - Bloque 1: Dominancia Cuádriceps",
+              ejercicios: [
+                { nombre: "Extensión de cuádriceps", series: "4 series (30/20/15/15)", desc: "Pirámide ascendente de carga. 1s de pausa isométrica arriba[span_10](start_span)[span_10](end_span)." },
+                { nombre: "Prensa inclinada", series: "4 x 15 reps + 10s isometría", desc: "Sostén la carga a la mitad (90°) durante 10s continuos[span_11](start_span)[span_11](end_span)." }
+              ]
+            }
+          ]
+        }
+      ];
 
+      const [rutinaActual, setRutinaActual] = useState(baseDeDatosRutinas[1]); // Por defecto Martes Hombre
       const [loading, setLoading] = useState(false);
       const [sesionActiva, setSesionActiva] = useState(null);
 
@@ -80,9 +115,32 @@
         e.preventDefault();
         setLoading(true);
         setTimeout(() => {
+          // Búsqueda dinámica basada exactamente en lo que el usuario seleccionó
+          const encontrada = baseDeDatosRutinas.find(
+            r => r.genero === formData.genero && r.dia === formData.dia
+          );
+          
+          if (encontrada) {
+            setRutinaActual(encontrada);
+          } else {
+            // Rutina genérica de respaldo si no existe el día exacto en el mock
+            setRutinaActual({
+              titulo: `Programa Adaptado - ${formData.genero}`,
+              genero: formData.genero,
+              dia: formData.dia,
+              bloques: [
+                {
+                  bloque: `${formData.dia} - Bloque Principal`,
+                  ejercicios: [
+                    { nombre: "Ejecución Base por Grupos Musculares", series: "4 x 15 reps", desc: "Mantén tensión continua y tiempos de descanso controlados." }
+                  ]
+                }
+              ]
+            });
+          }
           setLoading(false);
           setTab('entrenar');
-        }, 500);
+        }, 400);
       };
 
       const formControlClass = "w-full p-3.5 rounded-2xl bg-[#f4f5f7] dark:bg-gray-800/60 border-none text-[13px] font-semibold text-gray-900 dark:text-gray-100 outline-none";
@@ -124,7 +182,7 @@
               <form onSubmit={handleGenerarCloud} className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
                 <div>
                   <h2 className="text-[20px] font-black">Motor de Planificación Pro</h2>
-                  <p className="text-[12px] text-[#6b7280] mt-1">Configura los parámetros exactos de tu programa de entrenamiento de alta intensidad.</p>
+                  <p className="text-[12px] text-[#6b7280] mt-1">Configura género y día para consultar la rutina correspondiente.</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -133,23 +191,15 @@
                     <input type="text" value={formData.nombre} onChange={e=>setFormData({...formData, nombre: e.target.value})} className={formControlClass} />
                   </div>
                   <div>
-                    <label className={labelClass}>PROGRAMA / GÉNERO</label>
+                    <label className={labelClass}>GÉNERO</label>
                     <select value={formData.genero} onChange={e=>setFormData({...formData, genero: e.target.value})} className={formControlClass}>
-                      <option>Mujer</option>
                       <option>Hombre</option>
+                      <option>Mujer</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClass}>NIVEL TÉCNICO</label>
-                    <select value={formData.nivel} onChange={e=>setFormData({...formData, nivel: e.target.value})} className={formControlClass}>
-                      <option>Avanzado (Fuerza & Hipertrofia)</option>
-                      <option>Intermedio</option>
-                      <option>Competencia</option>
-                    </select>
-                  </div>
                   <div>
                     <label className={labelClass}>DÍA DE LA SEMANA</label>
                     <select value={formData.dia} onChange={e=>setFormData({...formData, dia: e.target.value})} className={formControlClass}>
@@ -160,38 +210,17 @@
                       <option>Viernes</option>
                     </select>
                   </div>
-                </div>
-
-                <div>
-                  <label className={labelClass}>OBJETIVO PRINCIPAL</label>
-                  <select value={formData.objetivo} onChange={e=>setFormData({...formData, objetivo: e.target.value})} className={formControlClass}>
-                    <option>Hipertrofia Extrema & Tonificación</option>
-                    <option>Fuerza Máxima Aplicada</option>
-                    <option>Definición con Retención Muscular</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={labelClass}>DESCANSO ENTRE SERIES</label>
+                    <label className={labelClass}>DESCANSO</label>
                     <select value={formData.descansoEntreSeries} onChange={e=>setFormData({...formData, descansoEntreSeries: e.target.value})} className={formControlClass}>
                       <option>90 segundos</option>
                       <option>60 segundos</option>
-                      <option>120 segundos</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelClass}>RESTRICCIÓN MÉDICA</label>
-                    <select value={formData.restriccion} onChange={e=>setFormData({...formData, restriccion: e.target.value})} className={formControlClass}>
-                      <option>Ninguna</option>
-                      <option>Protección Lumbar / Cero Impacto</option>
-                      <option>Manguito Rotador / Hombro</option>
                     </select>
                   </div>
                 </div>
 
                 <button type="submit" disabled={loading} className="w-full py-4 rounded-[1.25rem] bg-gradient-to-r from-[#2b6ded] to-[#1442c2] text-white font-extrabold text-[11px] uppercase tracking-widest shadow-md">
-                  {loading ? 'SINCRONIZANDO BLOQUES...' : 'GENERAR RUTINA PROFESIONAL'}
+                  {loading ? 'CONSULTANDO...' : 'CARGAR RUTINA SELECCIONADA'}
                 </button>
               </form>
             )}
@@ -200,9 +229,9 @@
             {tab === 'entrenar' && !sesionActiva && (
               <div className="space-y-4">
                 <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-2xl space-y-1">
-                  <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400">Atleta: {formData.nombre} • {formData.genero}</span>
-                  <h3 className="font-extrabold text-[15px]">{rutinaActual.titulo} - {formData.dia}</h3>
-                  <p className="text-[11px] text-gray-500">Descanso configurado: {formData.descansoEntreSeries} | Nivel: {formData.nivel}</p>
+                  <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400">Atleta: {formData.nombre} • {rutinaActual.genero}</span>
+                  <h3 className="font-extrabold text-[15px]">{rutinaActual.titulo}</h3>
+                  <p className="text-[11px] text-gray-500">Día seleccionado: {rutinaActual.dia}</p>
                 </div>
 
                 {rutinaActual.bloques.map((bloque, bIdx) => (
@@ -230,7 +259,7 @@
             {tab === 'entrenar' && sesionActiva && (
               <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
                 <h2 className="text-[18px] font-black">Entrenando: {sesionActiva.bloque}</h2>
-                <p className="text-xs text-gray-500">Aplica las pautas técnicas de pirámide e isometrías estrictas.</p>
+                <p className="text-xs text-gray-500">Registra tus marcas y aplica las pautas profesionales.</p>
                 <button onClick={() => setSesionActiva(null)} className="w-full py-3.5 bg-green-600 text-white font-extrabold text-[12px] rounded-2xl">
                   ✓ Completar Bloque
                 </button>
@@ -241,14 +270,14 @@
             {tab === 'social' && (
               <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3 text-center">
                 <h3 className="text-[16px] font-black">Comunidad Pro Elite</h3>
-                <p className="text-xs text-gray-500">Comparte tus progresos de cargas pesadas y técnicas avanzadas.</p>
+                <p className="text-xs text-gray-500">Comparte tus progresos.</p>
               </div>
             )}
 
             {/* PESTAÑA TIMER */}
             {tab === 'timer' && (
               <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-8 shadow-sm border border-gray-100 dark:border-gray-800 text-center space-y-4">
-                <span className="text-[10px] font-black text-[#2b6ded] uppercase">CRONÓMETRO DE ISOMETRÍA / DESCANSO</span>
+                <span className="text-[10px] font-black text-[#2b6ded] uppercase">CRONÓMETRO</span>
                 <div className="text-[64px] font-black leading-none">01:30</div>
                 <button className="px-7 py-2.5 bg-[#306ee8] text-white font-bold text-[12px] rounded-xl">Iniciar Timer</button>
               </div>
