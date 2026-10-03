@@ -33,7 +33,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+    const { useState, useEffect } = React;
 
     function App() {
       const [tab, setTab] = useState('generar');
@@ -45,46 +45,34 @@
       }, [darkMode]);
 
       const [formData, setFormData] = useState({
-        nombre: 'Alan', 
-        nivel: 'Intermedio', 
-        objetivo: 'Ganar músculo', 
-        dias: '4 días', 
-        lesiones: 'Hombro / Manguito rotador'
+        nombre: 'Atleta', 
+        genero: 'Mujer',
+        dia: 'Lunes',
+        enfoque: 'Dominancia Cuádriceps & Tensión Glúteos'
       });
 
-      // RUTINA MAESTRA (Simulando respuesta Cloud desde Supabase / Biblioteca Maestra)
+      // RUTINA PROFESIONAL SINCRONIZADA DESDE LA BD
       const [rutinaActual, setRutinaActual] = useState({
-        titulo: "Hipertrofia Intermedia - Enfoque Poleas y Cero Impacto Axial",
-        usuario: 'Alan',
-        nivel: 'Intermedio',
-        objetivo: 'Ganar músculo',
-        dias: [
+        titulo: "Programa de Hipertrofia & Fuerza Aplicada - Día 1",
+        genero: "Mujer",
+        dia: "Lunes",
+        bloques: [
           {
-            nombre: "Día 1: Torso Superior (Poleas)",
+            bloque: "Lunes - Bloque 1: Dominancia Cuádriceps",
             ejercicios: [
-              { nombre: "Press en Polea Baja", series: 4, reps: "10-12", desc: "Controla la fase excéntrica sin forzar la articulación." },
-              { nombre: "Jalón al Pecho", series: 4, reps: "10-12", desc: "Abre el pecho y tracciona con los codos." }
+              { nombre: "Extensión de cuádriceps", series: "4 series (30/20/15/15)", desc: "Pirámide ascendente de carga. Sube el peso en cada serie. Mantén 1 segundo de pausa isométrica arriba." },
+              { nombre: "Prensa inclinada", series: "4 x 15 reps + 10s isometría", desc: "Al terminar la repetición 15, sostiene la carga a la mitad (90°) durante 10 segundos continuos." },
+              { nombre: "Sentadilla Hack", series: "4 x 15 reps + 10s isometría", desc: "Rango profundo. Sostén la tensión al centro del recorrido durante 10 segundos al finalizar." },
+              { nombre: "Estocadas caminadas", series: "4 x 12 reps (por pierna)", desc: "Trabajo con peso manteniendo el torso con ligera inclinación para enfocar el esfuerzo en el cuádriceps." },
+              { nombre: "Sentadilla libre AyC", series: "4 x 15 reps (Lentas)", desc: "Ejecución a ritmo muy lento alternando postura Abierta y Cerrada (AyC) entre repeticiones." }
             ]
           },
           {
-            nombre: "Día 2: Tren Inferior Seguro",
+            bloque: "Lunes - Bloque 2: Tensión Glúteos",
             ejercicios: [
-              { nombre: "Prensa de Piernas", series: 4, reps: "12-15", desc: "Empuje controlado protegiendo la zona lumbar." },
-              { nombre: "Curl Femoral", series: 3, reps: "12", desc: "Contracción máxima en cada flexión." }
-            ]
-          },
-          {
-            nombre: "Día 3: Brazos y Hombro Sano",
-            ejercicios: [
-              { nombre: "Curl en Polea", series: 3, reps: "12", desc: "Mantén los codos fijos al costado del cuerpo." },
-              { nombre: "Elevaciones Laterales en Polea Baja", series: 4, reps: "15", desc: "Movimiento estricto y continuo." }
-            ]
-          },
-          {
-            nombre: "Día 4: Espalda y Core",
-            ejercicios: [
-              { nombre: "Remo en Polea Sentado", series: 4, reps: "10-12", desc: "Espalda firme y tracción al ombligo." },
-              { nombre: "Plancha abdominal", series: 3, reps: "45 seg", desc: "Core totalmente contraído." }
+              { nombre: "Empuje de cadera (Barra)", series: "4 x (10 + 10s + 10)", desc: "10 reps intensas + 10s de isometría arriba apretando fuerte + 10 repeticiones adicionales de remate." },
+              { nombre: "Sentadilla Sumo (Mancuerna)", series: "4 x (10/15/20)", desc: "Pirámide descendente: Empieza con el máximo peso a 10 reps y baja la carga subiendo repeticiones." },
+              { nombre: "Patada de glúteo Tri-Serie", series: "4 x (15+15+15)", desc: "Secuencia sin descanso: 15 posteriores + 15 laterales + 15 diagonales por pierna." }
             ]
           }
         ]
@@ -92,16 +80,14 @@
 
       const [loading, setLoading] = useState(false);
       const [sesionActiva, setSesionActiva] = useState(null);
-      const [timerCorriendo, setTimerCorriendo] = useState(false);
 
       const handleGenerarCloud = (e) => {
         e.preventDefault();
         setLoading(true);
         setTimeout(() => {
-          // Aquí en producción se realiza la consulta a Supabase: select * from biblioteca_rutinas where nivel = ...
           setLoading(false);
           setTab('entrenar');
-        }, 500);
+        }, 400);
       };
 
       const formControlClass = "w-full p-3.5 rounded-2xl bg-[#f4f5f7] dark:bg-gray-800/50 border-none text-[13px] font-medium text-gray-900 dark:text-gray-100 outline-none";
@@ -121,7 +107,7 @@
           </header>
 
           <nav className="bg-[#ecedf1] dark:bg-gray-800/60 p-1.5 rounded-2xl flex justify-between text-[11px] font-semibold">
-            {['Generar', 'Entrenar', 'Social', 'Crear', 'Timer'].map(t => (
+            {['Generar', 'Entrenar', 'Social', 'Timer'].map(t => (
               <button 
                 key={t}
                 onClick={() => setTab(t.toLowerCase())}
@@ -138,55 +124,44 @@
 
           <main className="space-y-4">
 
-            {/* GENERADOR CLOUD */}
+            {/* GENERADOR CLOUD PROFESIONAL */}
             {tab === 'generar' && (
               <form onSubmit={handleGenerarCloud} className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
                 <div>
-                  <h2 className="text-[20px] font-black text-gray-900 dark:text-white">Motor Cloud Maestra</h2>
-                  <p className="text-[12px] text-[#6b7280] mt-1">Selecciona los parámetros para sincronizar con la base de datos de Supabase.</p>
+                  <h2 className="text-[20px] font-black text-gray-900 dark:text-white">Planificación Profesional</h2>
+                  <p className="text-[12px] text-[#6b7280] mt-1">Sincroniza los programas basados en tus guías avanzadas desde Supabase.</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className={labelClass}>NOMBRE</label><input type="text" value={formData.nombre} onChange={e=>setFormData({...formData, nombre: e.target.value})} className={formControlClass} /></div>
+                  <div><label className={labelClass}>ATLETA</label><input type="text" value={formData.nombre} onChange={e=>setFormData({...formData, nombre: e.target.value})} className={formControlClass} /></div>
                   <div>
-                    <label className={labelClass}>NIVEL</label>
-                    <select value={formData.nivel} onChange={e=>setFormData({...formData, nivel: e.target.value})} className={formControlClass}>
-                      <option>Principiante</option>
-                      <option>Intermedio</option>
-                      <option>Avanzado</option>
+                    <label className={labelClass}>PROGRAMA / GÉNERO</label>
+                    <select value={formData.genero} onChange={e=>setFormData({...formData, genero: e.target.value})} className={formControlClass}>
+                      <option>Mujer</option>
+                      <option>Hombre</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={labelClass}>OBJETIVO</label>
-                    <select value={formData.objetivo} onChange={e=>setFormData({...formData, objetivo: e.target.value})} className={formControlClass}>
-                      <option>Ganar músculo</option>
-                      <option>Perder grasa</option>
-                      <option>Fuerza</option>
+                    <label className={labelClass}>DÍA DE LA SEMANA</label>
+                    <select value={formData.dia} onChange={e=>setFormData({...formData, dia: e.target.value})} className={formControlClass}>
+                      <option>Lunes</option>
+                      <option>Martes</option>
+                      <option>Miércoles</option>
+                      <option>Jueves</option>
+                      <option>Viernes</option>
                     </select>
                   </div>
                   <div>
-                    <label className={labelClass}>FRECUENCIA</label>
-                    <select value={formData.dias} onChange={e=>setFormData({...formData, dias: e.target.value})} className={formControlClass}>
-                      <option>4 días</option>
-                      <option>3 días</option>
-                    </select>
+                    <label className={labelClass}>ENFOQUE</label>
+                    <input type="text" value={formData.enfoque} onChange={e=>setFormData({...formData, enfoque: e.target.value})} className={formControlClass} />
                   </div>
-                </div>
-
-                <div>
-                  <label className={labelClass}>RESTRICCIÓN / LESIÓN</label>
-                  <select value={formData.lesiones} onChange={e=>setFormData({...formData, lesiones: e.target.value})} className={formControlClass}>
-                    <option>Hombro / Manguito rotador</option>
-                    <option>Espalda baja (Cero impacto axial)</option>
-                    <option>Ninguna</option>
-                  </select>
                 </div>
 
                 <button type="submit" disabled={loading} className="w-full py-4 rounded-[1.25rem] bg-gradient-to-r from-[#306ee8] to-[#1c4baf] text-white font-extrabold text-[11px] uppercase tracking-widest shadow-md">
-                  {loading ? 'CONSULTANDO NUBE...' : 'SINCRONIZAR RUTINA DESDE SUPABASE'}
+                  {loading ? 'SINCRONIZANDO NUBE...' : 'CARGAR RUTINA DESDE SUPABASE'}
                 </button>
               </form>
             )}
@@ -195,23 +170,23 @@
             {tab === 'entrenar' && !sesionActiva && (
               <div className="space-y-4">
                 <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-2xl space-y-1">
-                  <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400">Biblioteca Cloud Activa</span>
+                  <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400">Cloud Sincronizado • {formData.genero}</span>
                   <h3 className="font-extrabold text-[15px]">{rutinaActual.titulo}</h3>
-                  <p className="text-[11px] text-gray-500">Atleta: {formData.nombre} • Restricción: {formData.lesiones}</p>
+                  <p className="text-[11px] text-gray-500">Día: {formData.dia} • {formData.enfoque}</p>
                 </div>
 
-                {rutinaActual.dias.map((dia, diaIdx) => (
-                  <div key={diaIdx} className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
+                {rutinaActual.bloques.map((bloque, bIdx) => (
+                  <div key={bIdx} className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
                     <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
-                      <h3 className="font-extrabold text-[15px]">{dia.nombre}</h3>
-                      <button onClick={() => setSesionActiva(dia)} className="text-[11px] font-bold text-white bg-[#2b6ded] px-3.5 py-1.5 rounded-full shadow-sm">Iniciar</button>
+                      <h3 className="font-extrabold text-[14px] text-blue-600 dark:text-blue-400">{bloque.bloque}</h3>
+                      <button onClick={() => setSesionActiva(bloque)} className="text-[11px] font-bold text-white bg-[#2b6ded] px-3.5 py-1.5 rounded-full shadow-sm">Entrenar Bloque</button>
                     </div>
                     <div className="space-y-3">
-                      {dia.ejercicios.map((ej, ejIdx) => (
+                      {bloque.ejercicios.map((ej, ejIdx) => (
                         <div key={ejIdx} className="bg-[#f7f8fa] dark:bg-gray-800/40 p-3.5 rounded-2xl space-y-1">
                           <div className="flex justify-between items-center">
                             <h4 className="font-bold text-[13px]">{ej.nombre}</h4>
-                            <span className="text-[11px] font-bold text-[#2b6ded]">{ej.series} series × {ej.reps}</span>
+                            <span className="text-[11px] font-extrabold text-[#2b6ded]">{ej.series}</span>
                           </div>
                           <p className="text-[11px] text-gray-500">{ej.desc}</p>
                         </div>
@@ -224,58 +199,28 @@
 
             {tab === 'entrenar' && sesionActiva && (
               <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
-                <h2 className="text-[18px] font-black">Sesión Guiada: {sesionActiva.nombre}</h2>
-                <p className="text-xs text-gray-500">Registra tus marcas y descansa según el ritmo establecido.</p>
+                <h2 className="text-[18px] font-black">Sesión Activa: {sesionActiva.bloque}</h2>
+                <p className="text-xs text-gray-500">Registra tus marcas aplicando las pirámides e isometrías correspondientes.</p>
                 <button onClick={() => setSesionActiva(null)} className="w-full py-3.5 bg-green-600 text-white font-extrabold text-[12px] rounded-2xl">
-                  ✓ Finalizar Sesión
+                  ✓ Finalizar Bloque
                 </button>
               </div>
             )}
 
             {/* PESTAÑA SOCIAL */}
             {tab === 'social' && (
-              <div className="space-y-4">
-                <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
-                  <h3 className="text-[14px] font-black uppercase tracking-wider text-gray-400">Comunidad & Influencers</h3>
-                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                    <div className="flex flex-col items-center space-y-1 min-w-[70px]">
-                      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" className="w-14 h-14 rounded-full object-cover border-2 border-blue-500 p-0.5" />
-                      <span className="text-[11px] font-bold">Carlos Coach</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80" className="w-10 h-10 rounded-full object-cover" />
-                    <div>
-                      <h4 className="font-bold text-[13px]">Sofia Fit</h4>
-                      <span className="text-[10px] text-gray-400">Hace 1 hora</span>
-                    </div>
-                  </div>
-                  <h5 className="font-extrabold text-[15px]">Guía VIP: Tren Superior Cero Impacto</h5>
-                  <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl text-center space-y-2">
-                    <span className="text-amber-500 font-bold text-xs">🔒 Contenido Exclusivo VIP</span>
-                    <button className="w-full py-2 bg-amber-500 text-black font-extrabold text-xs rounded-xl uppercase tracking-wider">Desbloquear por $4.99/mes</button>
-                  </div>
-                </div>
+              <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3 text-center">
+                <h3 className="text-[16px] font-black">Comunidad FitAI Pro</h3>
+                <p className="text-xs text-gray-500">Comparte tus marcas y avances con otros atletas del programa.</p>
               </div>
             )}
 
-            {tab === 'crear' && (
-              <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800 space-y-4">
-                <h2 className="text-[20px] font-black">Creador Manual</h2>
-                <input type="text" placeholder="Nombre de la rutina..." className={formControlClass} />
-              </div>
-            )}
-
+            {/* PESTAÑA TIMER */}
             {tab === 'timer' && (
               <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-8 shadow-sm border border-gray-100 dark:border-gray-800 text-center space-y-4">
-                <span className="text-[10px] font-black text-[#2b6ded] uppercase">PREPÁRATE</span>
+                <span className="text-[10px] font-black text-[#2b6ded] uppercase">DESCANSO / ISOMETRÍA</span>
                 <div className="text-[64px] font-black leading-none">00:45</div>
-                <button onClick={()=>setTimerCorriendo(!timerCorriendo)} className="px-7 py-2.5 bg-[#306ee8] text-white font-bold text-[12px] rounded-xl">
-                  {timerCorriendo ? 'Pausar' : 'Iniciar'}
-                </button>
+                <button className="px-7 py-2.5 bg-[#306ee8] text-white font-bold text-[12px] rounded-xl">Iniciar Timer</button>
               </div>
             )}
 
