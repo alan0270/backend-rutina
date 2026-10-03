@@ -3,18 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>FitAI Pro</title>
+  <title>FitAI Pro - Elite Edition</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-          }
-        }
-      }
+      theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } }
     }
   </script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -23,13 +17,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
-    input[type="number"]::-webkit-inner-spin-button, 
-    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-[#f7f8fa] dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen pb-20">
+<body class="bg-[#f7f8fa] dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen pb-24">
   <div id="root"></div>
 
   <script type="text/babel">
@@ -44,35 +36,38 @@
         else document.documentElement.classList.remove('dark');
       }, [darkMode]);
 
+      // Parámetros avanzados y detallados
       const [formData, setFormData] = useState({
-        nombre: 'Atleta', 
+        nombre: 'Atleta Pro',
         genero: 'Mujer',
+        nivel: 'Avanzado',
+        objetivo: 'Hipertrofia Extrema & Tonificación',
         dia: 'Lunes',
-        enfoque: 'Dominancia Cuádriceps & Tensión Glúteos'
+        enfoque: 'Dominancia Cuádriceps & Tensión Glúteos',
+        descansoEntreSeries: '90 segundos',
+        restriccion: 'Ninguna'
       });
 
-      // RUTINA PROFESIONAL SINCRONIZADA DESDE LA BD
       const [rutinaActual, setRutinaActual] = useState({
-        titulo: "Programa de Hipertrofia & Fuerza Aplicada - Día 1",
-        genero: "Mujer",
-        dia: "Lunes",
+        titulo: "Programa Avanzado de Hipertrofia & Fuerza",
         bloques: [
           {
             bloque: "Lunes - Bloque 1: Dominancia Cuádriceps",
             ejercicios: [
-              { nombre: "Extensión de cuádriceps", series: "4 series (30/20/15/15)", desc: "Pirámide ascendente de carga. Sube el peso en cada serie. Mantén 1 segundo de pausa isométrica arriba." },
-              { nombre: "Prensa inclinada", series: "4 x 15 reps + 10s isometría", desc: "Al terminar la repetición 15, sostiene la carga a la mitad (90°) durante 10 segundos continuos." },
-              { nombre: "Sentadilla Hack", series: "4 x 15 reps + 10s isometría", desc: "Rango profundo. Sostén la tensión al centro del recorrido durante 10 segundos al finalizar." },
-              { nombre: "Estocadas caminadas", series: "4 x 12 reps (por pierna)", desc: "Trabajo con peso manteniendo el torso con ligera inclinación para enfocar el esfuerzo en el cuádriceps." },
-              { nombre: "Sentadilla libre AyC", series: "4 x 15 reps (Lentas)", desc: "Ejecución a ritmo muy lento alternando postura Abierta y Cerrada (AyC) entre repeticiones." }
+              { nombre: "Extensión de cuádriceps", series: "4 series (30/20/15/15)", desc: "Pirámide ascendente de carga. Sube peso. 1s de pausa isométrica arriba." },
+              { nombre: "Prensa inclinada", series: "4 x 15 reps + 10s isometría", desc: "Al acabar la rep 15, sostén la carga a la mitad (90°) durante 10s continuos." },
+              { nombre: "Sentadilla Hack", series: "4 x 15 reps + 10s isometría", desc: "Rango profundo. Sostén la tensión al centro del recorrido 10s al finalizar." },
+              { nombre: "Estocadas caminadas", series: "4 x 12 reps (por pierna)", desc: "Torso con ligera inclinación para enfocar el esfuerzo en el cuádriceps." },
+              { nombre: "Sentadilla libre AyC", series: "4 x 15 reps (Lentas)", desc: "Ritmo muy lento alternando postura Abierta y Cerrada (AyC)." }
             ]
           },
           {
             bloque: "Lunes - Bloque 2: Tensión Glúteos",
             ejercicios: [
-              { nombre: "Empuje de cadera (Barra)", series: "4 x (10 + 10s + 10)", desc: "10 reps intensas + 10s de isometría arriba apretando fuerte + 10 repeticiones adicionales de remate." },
-              { nombre: "Sentadilla Sumo (Mancuerna)", series: "4 x (10/15/20)", desc: "Pirámide descendente: Empieza con el máximo peso a 10 reps y baja la carga subiendo repeticiones." },
-              { nombre: "Patada de glúteo Tri-Serie", series: "4 x (15+15+15)", desc: "Secuencia sin descanso: 15 posteriores + 15 laterales + 15 diagonales por pierna." }
+              { nombre: "Empuje de cadera (Barra)", series: "4 x (10 + 10s + 10)", desc: "10 reps intensas + 10s isometría arriba apretando + 10 reps de remate." },
+              { nombre: "Sentadilla Sumo (Mancuerna)", series: "4 x (10/15/20)", desc: "Pirámide descendente: Empieza con máximo peso a 10 reps y sube repeticiones bajando carga." },
+              { nombre: "Patada de glúteo Tri-Serie", series: "4 x (15+15+15)", desc: "Sin descanso: 15 posteriores + 15 laterales + 15 diagonales por pierna." },
+              { nombre: "Sentadilla con banda elástica", series: "4 x 30 reps + Desplazamiento", desc: "15 con peso + 15 sin peso + desplazamientos laterales al fallo." }
             ]
           }
         ]
@@ -87,10 +82,10 @@
         setTimeout(() => {
           setLoading(false);
           setTab('entrenar');
-        }, 400);
+        }, 500);
       };
 
-      const formControlClass = "w-full p-3.5 rounded-2xl bg-[#f4f5f7] dark:bg-gray-800/50 border-none text-[13px] font-medium text-gray-900 dark:text-gray-100 outline-none";
+      const formControlClass = "w-full p-3.5 rounded-2xl bg-[#f4f5f7] dark:bg-gray-800/60 border-none text-[13px] font-semibold text-gray-900 dark:text-gray-100 outline-none";
       const labelClass = "block text-[10px] font-extrabold text-[#6b7280] dark:text-gray-400 uppercase tracking-widest mb-1.5 ml-1";
 
       return (
@@ -98,8 +93,8 @@
           
           <header className="bg-white dark:bg-gray-900 rounded-[2rem] py-3.5 px-5 shadow-sm border border-gray-100/80 dark:border-gray-800 flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 bg-[#2b6ded] text-white font-black rounded-full flex items-center justify-center text-sm shadow-sm">F</div>
-              <h1 className="text-[16px] font-black text-gray-900 dark:text-white tracking-tight">FitAI <span className="text-[#2b6ded] font-medium">Pro</span></h1>
+              <div className="w-9 h-9 bg-[#2b6ded] text-white font-black rounded-full flex items-center justify-center text-sm shadow-sm">⚡</div>
+              <h1 className="text-[16px] font-black tracking-tight">FitAI <span className="text-[#2b6ded]">Pro Elite</span></h1>
             </div>
             <button onClick={() => setDarkMode(!darkMode)} className="w-9 h-9 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-[15px]">
               {darkMode ? '☀️' : '🌙'}
@@ -124,16 +119,19 @@
 
           <main className="space-y-4">
 
-            {/* GENERADOR CLOUD PROFESIONAL */}
+            {/* GENERADOR AVANZADO */}
             {tab === 'generar' && (
               <form onSubmit={handleGenerarCloud} className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
                 <div>
-                  <h2 className="text-[20px] font-black text-gray-900 dark:text-white">Planificación Profesional</h2>
-                  <p className="text-[12px] text-[#6b7280] mt-1">Sincroniza los programas basados en tus guías avanzadas desde Supabase.</p>
+                  <h2 className="text-[20px] font-black">Motor de Planificación Pro</h2>
+                  <p className="text-[12px] text-[#6b7280] mt-1">Configura los parámetros exactos de tu programa de entrenamiento de alta intensidad.</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className={labelClass}>ATLETA</label><input type="text" value={formData.nombre} onChange={e=>setFormData({...formData, nombre: e.target.value})} className={formControlClass} /></div>
+                  <div>
+                    <label className={labelClass}>ATLETA</label>
+                    <input type="text" value={formData.nombre} onChange={e=>setFormData({...formData, nombre: e.target.value})} className={formControlClass} />
+                  </div>
                   <div>
                     <label className={labelClass}>PROGRAMA / GÉNERO</label>
                     <select value={formData.genero} onChange={e=>setFormData({...formData, genero: e.target.value})} className={formControlClass}>
@@ -145,6 +143,14 @@
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
+                    <label className={labelClass}>NIVEL TÉCNICO</label>
+                    <select value={formData.nivel} onChange={e=>setFormData({...formData, nivel: e.target.value})} className={formControlClass}>
+                      <option>Avanzado (Fuerza & Hipertrofia)</option>
+                      <option>Intermedio</option>
+                      <option>Competencia</option>
+                    </select>
+                  </div>
+                  <div>
                     <label className={labelClass}>DÍA DE LA SEMANA</label>
                     <select value={formData.dia} onChange={e=>setFormData({...formData, dia: e.target.value})} className={formControlClass}>
                       <option>Lunes</option>
@@ -154,14 +160,38 @@
                       <option>Viernes</option>
                     </select>
                   </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>OBJETIVO PRINCIPAL</label>
+                  <select value={formData.objetivo} onChange={e=>setFormData({...formData, objetivo: e.target.value})} className={formControlClass}>
+                    <option>Hipertrofia Extrema & Tonificación</option>
+                    <option>Fuerza Máxima Aplicada</option>
+                    <option>Definición con Retención Muscular</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={labelClass}>ENFOQUE</label>
-                    <input type="text" value={formData.enfoque} onChange={e=>setFormData({...formData, enfoque: e.target.value})} className={formControlClass} />
+                    <label className={labelClass}>DESCANSO ENTRE SERIES</label>
+                    <select value={formData.descansoEntreSeries} onChange={e=>setFormData({...formData, descansoEntreSeries: e.target.value})} className={formControlClass}>
+                      <option>90 segundos</option>
+                      <option>60 segundos</option>
+                      <option>120 segundos</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>RESTRICCIÓN MÉDICA</label>
+                    <select value={formData.restriccion} onChange={e=>setFormData({...formData, restriccion: e.target.value})} className={formControlClass}>
+                      <option>Ninguna</option>
+                      <option>Protección Lumbar / Cero Impacto</option>
+                      <option>Manguito Rotador / Hombro</option>
+                    </select>
                   </div>
                 </div>
 
-                <button type="submit" disabled={loading} className="w-full py-4 rounded-[1.25rem] bg-gradient-to-r from-[#306ee8] to-[#1c4baf] text-white font-extrabold text-[11px] uppercase tracking-widest shadow-md">
-                  {loading ? 'SINCRONIZANDO NUBE...' : 'CARGAR RUTINA DESDE SUPABASE'}
+                <button type="submit" disabled={loading} className="w-full py-4 rounded-[1.25rem] bg-gradient-to-r from-[#2b6ded] to-[#1442c2] text-white font-extrabold text-[11px] uppercase tracking-widest shadow-md">
+                  {loading ? 'SINCRONIZANDO BLOQUES...' : 'GENERAR RUTINA PROFESIONAL'}
                 </button>
               </form>
             )}
@@ -170,23 +200,23 @@
             {tab === 'entrenar' && !sesionActiva && (
               <div className="space-y-4">
                 <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-2xl space-y-1">
-                  <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400">Cloud Sincronizado • {formData.genero}</span>
-                  <h3 className="font-extrabold text-[15px]">{rutinaActual.titulo}</h3>
-                  <p className="text-[11px] text-gray-500">Día: {formData.dia} • {formData.enfoque}</p>
+                  <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400">Atleta: {formData.nombre} • {formData.genero}</span>
+                  <h3 className="font-extrabold text-[15px]">{rutinaActual.titulo} - {formData.dia}</h3>
+                  <p className="text-[11px] text-gray-500">Descanso configurado: {formData.descansoEntreSeries} | Nivel: {formData.nivel}</p>
                 </div>
 
                 {rutinaActual.bloques.map((bloque, bIdx) => (
                   <div key={bIdx} className="bg-white dark:bg-gray-900 rounded-[2rem] p-5 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
                     <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
                       <h3 className="font-extrabold text-[14px] text-blue-600 dark:text-blue-400">{bloque.bloque}</h3>
-                      <button onClick={() => setSesionActiva(bloque)} className="text-[11px] font-bold text-white bg-[#2b6ded] px-3.5 py-1.5 rounded-full shadow-sm">Entrenar Bloque</button>
+                      <button onClick={() => setSesionActiva(bloque)} className="text-[11px] font-bold text-white bg-[#2b6ded] px-3.5 py-1.5 rounded-full shadow-sm">Iniciar Bloque</button>
                     </div>
                     <div className="space-y-3">
                       {bloque.ejercicios.map((ej, ejIdx) => (
                         <div key={ejIdx} className="bg-[#f7f8fa] dark:bg-gray-800/40 p-3.5 rounded-2xl space-y-1">
                           <div className="flex justify-between items-center">
                             <h4 className="font-bold text-[13px]">{ej.nombre}</h4>
-                            <span className="text-[11px] font-extrabold text-[#2b6ded]">{ej.series}</span>
+                            <span className="text-[11px] font-black text-[#2b6ded]">{ej.series}</span>
                           </div>
                           <p className="text-[11px] text-gray-500">{ej.desc}</p>
                         </div>
@@ -199,10 +229,10 @@
 
             {tab === 'entrenar' && sesionActiva && (
               <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100/80 dark:border-gray-800 space-y-4">
-                <h2 className="text-[18px] font-black">Sesión Activa: {sesionActiva.bloque}</h2>
-                <p className="text-xs text-gray-500">Registra tus marcas aplicando las pirámides e isometrías correspondientes.</p>
+                <h2 className="text-[18px] font-black">Entrenando: {sesionActiva.bloque}</h2>
+                <p className="text-xs text-gray-500">Aplica las pautas técnicas de pirámide e isometrías estrictas.</p>
                 <button onClick={() => setSesionActiva(null)} className="w-full py-3.5 bg-green-600 text-white font-extrabold text-[12px] rounded-2xl">
-                  ✓ Finalizar Bloque
+                  ✓ Completar Bloque
                 </button>
               </div>
             )}
@@ -210,16 +240,16 @@
             {/* PESTAÑA SOCIAL */}
             {tab === 'social' && (
               <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3 text-center">
-                <h3 className="text-[16px] font-black">Comunidad FitAI Pro</h3>
-                <p className="text-xs text-gray-500">Comparte tus marcas y avances con otros atletas del programa.</p>
+                <h3 className="text-[16px] font-black">Comunidad Pro Elite</h3>
+                <p className="text-xs text-gray-500">Comparte tus progresos de cargas pesadas y técnicas avanzadas.</p>
               </div>
             )}
 
             {/* PESTAÑA TIMER */}
             {tab === 'timer' && (
               <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-8 shadow-sm border border-gray-100 dark:border-gray-800 text-center space-y-4">
-                <span className="text-[10px] font-black text-[#2b6ded] uppercase">DESCANSO / ISOMETRÍA</span>
-                <div className="text-[64px] font-black leading-none">00:45</div>
+                <span className="text-[10px] font-black text-[#2b6ded] uppercase">CRONÓMETRO DE ISOMETRÍA / DESCANSO</span>
+                <div className="text-[64px] font-black leading-none">01:30</div>
                 <button className="px-7 py-2.5 bg-[#306ee8] text-white font-bold text-[12px] rounded-xl">Iniciar Timer</button>
               </div>
             )}
